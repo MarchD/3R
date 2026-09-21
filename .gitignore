@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+*.fit
+.DS_Store
+.idea/
+*.local
