@@ -142,6 +142,11 @@ details summary { cursor: pointer; }
 .repairEntry { margin: 0 24px 24px; padding: 17px 18px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border: 1px solid #c7d6f5; border-radius: 11px; background: var(--blue-soft); }
 .repairEntry > div { display: grid; gap: 4px; }
 .repairEntry span { color: var(--muted); font-size: 13px; }
+.repairEntry > svg { flex: 0 0 auto; }
+.repairEntry .eligibilityIcon { color: var(--green); }
+.repairBlocked { border-color: #ecd49f; background: var(--amber-soft); }
+.repairBlocked > svg { color: var(--amber); }
+.repairBlocked .eligibilityBadge { margin-left: auto; padding: 5px 8px; border-radius: 6px; color: var(--amber); background: rgba(255,255,255,.62); font-size: 11px; font-weight: 700; white-space: nowrap; }
 .dialogBackdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px; background: rgba(19,31,51,.52); backdrop-filter: blur(4px); }
 .dialog { width: min(520px, 100%); padding: 28px; border-radius: 15px; background: white; box-shadow: 0 30px 90px rgba(13,23,40,.3); }
 .dialog > svg { color: var(--amber); }
@@ -206,6 +211,23 @@ details summary { cursor: pointer; }
 .emptyState p { color: var(--muted); line-height: 1.5; }
 .emptyPanel { min-height: 200px; display: flex; align-items: center; justify-content: center; gap: 9px; color: var(--muted); }
 .errorPanel strong { color: var(--red); }
+.garminGuide { margin-top: 24px; padding: 24px 28px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.7); }
+.guideHeading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.guideHeading h2 { margin: 0 0 5px; font-size: 18px; letter-spacing: -.02em; }
+.guideHeading p { margin: 0; color: var(--muted); font-size: 13px; }
+.guideHeading > span { padding: 5px 8px; border-radius: 6px; color: var(--blue); background: var(--blue-soft); font-size: 11px; font-weight: 700; white-space: nowrap; }
+.guideSteps { margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); list-style: none; counter-reset: guide; }
+.guideSteps li { min-width: 0; padding: 0 22px; display: grid; grid-template-columns: 34px 1fr; gap: 11px; position: relative; counter-increment: guide; border-right: 1px solid var(--line); }
+.guideSteps li:first-child { padding-left: 0; }
+.guideSteps li:last-child { padding-right: 0; border-right: 0; }
+.guideSteps li > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--blue); background: var(--blue-soft); position: relative; }
+.guideSteps li > span::after { content: counter(guide); position: absolute; right: -3px; bottom: -3px; width: 15px; height: 15px; display: grid; place-items: center; border: 2px solid white; border-radius: 50%; color: white; background: var(--blue); font-size: 8px; font-weight: 800; }
+.guideSteps li > div { display: grid; align-content: start; gap: 6px; }
+.guideSteps strong { font-size: 13px; }
+.guideSteps p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.guideSteps a { width: max-content; display: inline-flex; align-items: center; gap: 5px; color: var(--blue); font-size: 11px; font-weight: 700; text-decoration: none; }
+.guideSteps a:hover { text-decoration: underline; }
+.guideSteps code { padding: 1px 4px; border-radius: 4px; background: #e9eef5; font-size: 11px; }
 .toast { position: fixed; right: 24px; bottom: 24px; z-index: 100; padding: 11px 15px; border-radius: 9px; color: white; background: var(--ink); box-shadow: 0 10px 30px rgba(22,34,53,.25); font-size: 13px; }
 
 @media (max-width: 1100px) {
@@ -231,6 +253,7 @@ details summary { cursor: pointer; }
   .tabContent { padding: 16px; }
   .repairEntry, .repairCandidates, .diffPanel, .appliedPanel { margin-left: 16px; margin-right: 16px; }
   .repairEntry, .repairHeading { align-items: stretch; flex-direction: column; }
+  .repairBlocked .eligibilityBadge { margin-left: 0; width: max-content; }
   .repairHeading { display: flex; }
   .metrics { grid-template-columns: 1fr; }
   .metric:nth-child(n) { border-right: 0; border-bottom: 1px solid var(--line); }
@@ -242,6 +265,10 @@ details summary { cursor: pointer; }
   .derivedOutputGroup { grid-template-columns: 1fr; }
   .downloadGrid { justify-content: flex-start; }
   .fitExport { align-items: stretch; flex-direction: column; }
+  .guideHeading { flex-direction: column; }
+  .guideSteps { grid-template-columns: 1fr; gap: 18px; }
+  .guideSteps li, .guideSteps li:first-child, .guideSteps li:last-child { padding: 0 0 18px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .guideSteps li:last-child { padding-bottom: 0; border-bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

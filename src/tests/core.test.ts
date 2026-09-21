@@ -6,6 +6,7 @@ import { clampDt, cleanedSpeedIntegrationCandidate, localMedianReplacement } fro
 import { estimateSteps, interpretCadence } from '../fit/repair/estimateSteps';
 import { isPlausibleStepLength, median, medianStepLengthCandidate } from '../fit/repair/medianStepLength';
 import { weightedMean } from '../fit/repair/weightedStepLength';
+import { validateRepairEligibility } from '../fit/repair/validateRepairEligibility';
 import { safeStringify, toJsonCompatible } from '../utils/json';
 import { activityFixture } from './fixtures';
 
@@ -38,6 +39,19 @@ describe('step calculations', () => {
     expect(weightedMean([{ value: 1, weight: 1 }, { value: 2, weight: 3 }])).toBe(1.75);
     expect(isPlausibleStepLength(0.6)).toBe(true);
     expect(isPlausibleStepLength(1.61)).toBe(false);
+  });
+});
+
+describe('repair eligibility', () => {
+  it('accepts running activities and rejects unsupported sports with a reason', () => {
+    expect(validateRepairEligibility(activityFixture())).toEqual({ eligible: true, detectedSport: 'running' });
+    const cycling = activityFixture();
+    cycling.sport = 'cycling';
+    expect(validateRepairEligibility(cycling)).toMatchObject({
+      eligible: false,
+      detectedSport: 'cycling',
+      reason: expect.stringContaining('running activities only'),
+    });
   });
 });
 

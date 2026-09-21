@@ -38,6 +38,12 @@ FIT_FIXTURE=/absolute/path/to/activity.fit npm test
 
 `*.fit` is ignored by Git so private activity files cannot be committed accidentally.
 
+## Garmin Connect workflow
+
+1. In Garmin Connect Web, open **Activities → All Activities**, choose the activity, open the settings gear, and select **Export File**. Garmin documents this in [How Do I Export Data Out of Garmin Connect?](https://support.garmin.com/en-US/?faq=W1TvTPW8JZ6LfJSfK512Q8).
+2. Attach that original `.fit` file to 3R, inspect it, apply a running-distance repair, and select **Create repaired FIT**.
+3. In Garmin Connect Web, select the cloud upload icon, then **Import Data → Browse**, choose the downloaded `.repaired.fit` file, and import it. Garmin documents this in [How to Manually Upload Activities to Garmin Connect](https://support.garmin.com/en-US/?faq=Ht3ZP52Kju075uKvqTqu99).
+
 ## Parser
 
 3R uses the official [`@garmin/fitsdk`](https://www.npmjs.com/package/@garmin/fitsdk) JavaScript SDK. The parser adapter creates a `Stream` directly from the uploaded `ArrayBuffer`, checks the FIT header and CRC with `Decoder.checkIntegrity()`, then calls `Decoder.read()` with unknown-data preservation, message listeners, and developer-field listeners enabled.
@@ -55,6 +61,8 @@ Each candidate is implemented as an independent pure function under `src/fit/rep
 3. **Cleaned speed integration** — replaces speeds outside 0–6 m/s with the median from a ±60-record local window and integrates with time deltas clamped to 0–3 seconds.
 
 The user must inspect and select a candidate. Nothing is preselected or described as a guaranteed reconstruction.
+
+Before repair begins, 3R validates that the normalized FIT sport is `running` and that a session with at least two records exists. Unsupported activity types remain available for analysis and JSON download, but repair and FIT updating are blocked with an explicit reason.
 
 ## Architecture
 
@@ -91,6 +99,7 @@ Exact resolved versions are recorded in `package-lock.json` and can be inspected
 
 ## Known limitations
 
+- Distance repair currently supports running activities only. Other sports can be parsed and inspected but cannot be updated.
 - 3R exports JSON and a repaired FIT derivative. It does not export TCX.
 - FIT export creates a newly encoded derivative, not a byte-for-byte copy of the original. Invalid sentinel fields removed by the SDK may make the file smaller.
 - Unknown and developer fields are preserved when their original FIT definitions are decodable. Export stops rather than silently dropping data when the source decoder or output validation reports an error.

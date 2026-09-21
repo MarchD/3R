@@ -5,11 +5,13 @@ import { AnomalyPanel } from '../components/AnomalyPanel/AnomalyPanel';
 import { AttachmentList } from '../components/AttachmentList/AttachmentList';
 import { FileDropzone } from '../components/FileDropzone/FileDropzone';
 import { JsonViewer } from '../components/JsonViewer/JsonViewer';
+import { GarminWorkflowGuide } from '../components/GarminWorkflowGuide/GarminWorkflowGuide';
 import { RawMessagesView } from '../components/JsonViewer/RawMessagesView';
 import { RecordsTable } from '../components/RecordsTable/RecordsTable';
 import { RepairWizard } from '../components/RepairWizard/RepairWizard';
 import type { FitExportUiState } from '../components/RepairWizard/RepairWizard';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
+import { validateRepairEligibility } from '../fit/repair/validateRepairEligibility';
 import type { Attachment, FitParseError } from '../models/fit';
 import type { RepairCandidate, RepairState } from '../models/repair';
 import { downloadBlob } from '../utils/download';
@@ -102,6 +104,12 @@ export function App() {
 
   const calculateRepairs = () => {
     if (!selectedId || !result) return;
+    const eligibility = validateRepairEligibility(result.normalized);
+    if (!eligibility.eligible) {
+      setToast(eligibility.reason);
+      setRepairState({ status: 'not-requested' });
+      return;
+    }
     setRepairState({ status: 'calculating' });
     const key = `repair-${selectedId}`;
     const worker = new Worker(new URL('../fit/parser/fitWorker.ts', import.meta.url), { type: 'module' });
@@ -178,6 +186,7 @@ export function App() {
           {result && <><div className="fileHeading"><div><span>Selected file</span><h2>{result.file.name}</h2></div><div className={`statusPill ${result.integrity.complete ? 'complete' : 'partial'}`}>{result.integrity.complete ? 'Complete decode' : 'Partial decode'}</div></div><nav className="tabs" aria-label="Activity data views">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}><Icon size={16} />{label}{id === 'issues' && result.anomalies.length > 0 && <span>{result.anomalies.length}</span>}</button>)}</nav><div className="tabContent">{content}</div><RepairWizard result={result} state={repairState} onState={setRepairState} onCalculate={calculateRepairs} onApply={applyCandidate} fitExportState={fitExportState} onExportFit={() => void exportFit()} onCopied={() => setToast('Copied to clipboard')} /></>}
         </section></div>}
         {!attachments.length && <section className="emptyState"><div className="distanceRuler"><span>raw.fit</span><i /><span>inspect</span><i /><span>derive.json</span></div><div><strong>No activity loaded</strong><p>Attach one or more .fit files to begin. Each file is processed independently.</p></div></section>}
+        <GarminWorkflowGuide />
       </main>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
