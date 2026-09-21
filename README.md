@@ -1,6 +1,6 @@
 # 3R
 
-3R is a local-first Garmin FIT inspection and cautious distance-repair workbench. It decodes one or more `.fit` files in the browser, exposes normalized and raw JSON, identifies suspicious evidence, and creates a separate repaired JSON activity only after explicit confirmation.
+3R is a local-first Garmin FIT inspection and cautious distance-repair workbench. It decodes one or more `.fit` files in the browser, exposes normalized and raw JSON, identifies suspicious evidence, and creates separate repaired JSON and FIT derivatives only after explicit confirmation.
 
 ## Privacy and safety model
 
@@ -10,6 +10,7 @@
 - Analysis is shown first. No repair algorithm runs until the user clicks **Repair activity** and then **Continue to repair**.
 - Repair changes only the derived distance timeline, total distance, derived speed, and average pace.
 - Coordinates, timestamps, heart rate, cadence, elevation, calories, and original raw messages are not modified.
+- FIT export re-reads the local original, applies the confirmed patch in a worker, and validates the newly encoded file before download.
 
 ## Install and run
 
@@ -43,6 +44,8 @@ FIT_FIXTURE=/absolute/path/to/activity.fit npm test
 
 Decoder errors are surfaced as partial-decoding warnings. CRC failure never starts repair automatically. The app keeps every message returned by the SDK, including unknown numeric fields, and separately builds a Zod-backed normalized activity model. Garmin semicircle coordinates are converted to WGS84 degrees only in that normalized representation.
 
+The repaired FIT exporter uses the SDK's `Encoder` and Garmin's decode–edit–encode pattern. It rebuilds unknown profile entries from their original message definitions, carries developer-field descriptions into the encoder, applies repaired distance and speed values, and writes a fresh FIT header and CRC. Before allowing download, 3R decodes the result again and verifies CRC integrity, record count, and repaired session distance.
+
 ## Repair algorithms
 
 Each candidate is implemented as an independent pure function under `src/fit/repair/`:
@@ -61,6 +64,7 @@ src/
   components/           upload, attachments, data views, issues, repair UI
   fit/
     parser/              official SDK adapter, decoder, Web Worker
+    encoder/             preserved-message FIT re-encoding and validation
     normalization/       raw-to-normalized conversion and developer fields
     analysis/            summaries and anomaly evidence
     repair/              pure candidate and patch functions
@@ -87,7 +91,9 @@ Exact resolved versions are recorded in `package-lock.json` and can be inspected
 
 ## Known limitations
 
-- 3R exports JSON only. It does not write a replacement FIT or TCX file.
+- 3R exports JSON and a repaired FIT derivative. It does not export TCX.
+- FIT export creates a newly encoded derivative, not a byte-for-byte copy of the original. Invalid sentinel fields removed by the SDK may make the file smaller.
+- Unknown and developer fields are preserved when their original FIT definitions are decodable. Export stops rather than silently dropping data when the source decoder or output validation reports an error.
 - A damaged route cannot be reconstructed without independent route evidence such as GPX or another trace.
 - Garmin's JavaScript decoder can return partial messages for some malformed files, but it does not expose byte-level progress or a separate formal “tolerant mode.” 3R therefore reports partial output and decoder errors without claiming a complete recovery.
 - Search in normalized JSON reports whether a key or value exists; it does not expand every matching branch automatically.

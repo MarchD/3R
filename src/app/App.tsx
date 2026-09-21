@@ -8,9 +8,11 @@ import { JsonViewer } from '../components/JsonViewer/JsonViewer';
 import { RawMessagesView } from '../components/JsonViewer/RawMessagesView';
 import { RecordsTable } from '../components/RecordsTable/RecordsTable';
 import { RepairWizard } from '../components/RepairWizard/RepairWizard';
+import type { FitExportUiState } from '../components/RepairWizard/RepairWizard';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
 import type { Attachment, FitParseError } from '../models/fit';
 import type { RepairCandidate, RepairState } from '../models/repair';
+import { downloadBlob } from '../utils/download';
 
 type Tab = 'summary' | 'normalized' | 'raw' | 'records' | 'issues';
 const tabs: { id: Tab; label: string; icon: typeof Gauge }[] = [
@@ -28,6 +30,7 @@ export function App() {
   const [selectedId, setSelectedId] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('summary');
   const [repairStates, setRepairStates] = useState<Record<string, RepairState>>({});
+  const [fitExportStates, setFitExportStates] = useState<Record<string, FitExportUiState>>({});
   const [toast, setToast] = useState<string>();
   const workers = useRef(new Map<string, Worker>());
 
@@ -88,11 +91,13 @@ export function App() {
       return remaining;
     });
     setRepairStates((current) => { const next = { ...current }; delete next[id]; return next; });
+    setFitExportStates((current) => { const next = { ...current }; delete next[id]; return next; });
   };
 
   const selected = attachments.find((attachment) => attachment.id === selectedId);
   const result = selected?.state.status === 'parsed' ? selected.state.result : undefined;
   const repairState = selectedId ? repairStates[selectedId] ?? initialRepair : initialRepair;
+  const fitExportState: FitExportUiState = selectedId ? fitExportStates[selectedId] ?? { status: 'idle' } : { status: 'idle' };
   const setRepairState = (state: RepairState) => selectedId && setRepairStates((current) => ({ ...current, [selectedId]: state }));
 
   const calculateRepairs = () => {
@@ -117,6 +122,39 @@ export function App() {
     if (!result) return;
     const applied = applyRepairPatch(result.file.name, result.normalized, candidate);
     setRepairState({ status: 'applied', ...applied, candidates: repairState.status === 'previewing' ? repairState.candidates : [] });
+    if (selectedId) setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'idle' } }));
+  };
+
+  const exportFit = async () => {
+    if (!selectedId || !selected || repairState.status !== 'applied') return;
+    const key = `export-${selectedId}`;
+    setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'exporting' } }));
+    try {
+      const buffer = await selected.file.arrayBuffer();
+      const worker = new Worker(new URL('../fit/parser/fitWorker.ts', import.meta.url), { type: 'module' });
+      workers.current.set(key, worker);
+      worker.onmessage = (event) => {
+        if (event.data.type === 'fit-exported') {
+          const baseName = selected.file.name.replace(/\.fit$/i, '');
+          downloadBlob(`${baseName}.repaired.fit`, new Blob([event.data.buffer], { type: 'application/octet-stream' }));
+          setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'success', report: event.data.report } }));
+          setToast('Repaired FIT validated and downloaded');
+        } else if (event.data.type === 'error') {
+          setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'error', message: event.data.error.message } }));
+        }
+        workers.current.delete(key);
+        worker.terminate();
+      };
+      worker.onerror = () => {
+        setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'error', message: 'The local FIT encoder stopped unexpectedly.' } }));
+        workers.current.delete(key);
+        worker.terminate();
+      };
+      worker.postMessage({ id: selectedId, type: 'export-fit', buffer, patch: repairState.patch }, [buffer]);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'The original FIT file could not be read for export.';
+      setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'error', message } }));
+    }
   };
 
   const content = useMemo(() => {
@@ -137,7 +175,7 @@ export function App() {
           {!selected && <div className="emptyPanel">Select a FIT file to inspect it.</div>}
           {selected?.state.status === 'parsing' && <div className="loadingPanel" aria-live="polite"><span className="spinner" /><strong>Parsing locally</strong><p>The file is being decoded in a background worker.</p></div>}
           {selected?.state.status === 'error' && <div className="errorPanel" aria-live="assertive"><strong>This file could not be decoded</strong><p>{selected.state.error.message}</p><button className="button secondary" onClick={() => void parseAttachment(selected.id, selected.file)}>Retry parsing</button></div>}
-          {result && <><div className="fileHeading"><div><span>Selected file</span><h2>{result.file.name}</h2></div><div className={`statusPill ${result.integrity.complete ? 'complete' : 'partial'}`}>{result.integrity.complete ? 'Complete decode' : 'Partial decode'}</div></div><nav className="tabs" aria-label="Activity data views">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}><Icon size={16} />{label}{id === 'issues' && result.anomalies.length > 0 && <span>{result.anomalies.length}</span>}</button>)}</nav><div className="tabContent">{content}</div><RepairWizard result={result} state={repairState} onState={setRepairState} onCalculate={calculateRepairs} onApply={applyCandidate} onCopied={() => setToast('Copied to clipboard')} /></>}
+          {result && <><div className="fileHeading"><div><span>Selected file</span><h2>{result.file.name}</h2></div><div className={`statusPill ${result.integrity.complete ? 'complete' : 'partial'}`}>{result.integrity.complete ? 'Complete decode' : 'Partial decode'}</div></div><nav className="tabs" aria-label="Activity data views">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}><Icon size={16} />{label}{id === 'issues' && result.anomalies.length > 0 && <span>{result.anomalies.length}</span>}</button>)}</nav><div className="tabContent">{content}</div><RepairWizard result={result} state={repairState} onState={setRepairState} onCalculate={calculateRepairs} onApply={applyCandidate} fitExportState={fitExportState} onExportFit={() => void exportFit()} onCopied={() => setToast('Copied to clipboard')} /></>}
         </section></div>}
         {!attachments.length && <section className="emptyState"><div className="distanceRuler"><span>raw.fit</span><i /><span>inspect</span><i /><span>derive.json</span></div><div><strong>No activity loaded</strong><p>Attach one or more .fit files to begin. Each file is processed independently.</p></div></section>}
       </main>

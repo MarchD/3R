@@ -180,9 +180,23 @@ details summary { cursor: pointer; }
 .diffGrid span { color: var(--muted); font-size: 12px; }
 .diffGrid del { color: var(--red); font-size: 13px; }
 .diffGrid ins { color: var(--green); font-size: 17px; font-weight: 700; text-decoration: none; }
-.appliedPanel { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: var(--green-soft); border-color: #b8dfd1; }
-.appliedPanel p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.appliedPanel { display: grid; gap: 16px; background: #f8fbfa; border-color: #b8dfd1; }
+.appliedPanel p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.appliedHeading { display: flex; align-items: center; gap: 10px; }
+.appliedHeading > svg { color: var(--green); flex: 0 0 auto; }
+.appliedHeading > div { display: grid; gap: 2px; }
+.derivedOutputGroup { padding-top: 14px; display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 16px; border-top: 1px solid #d6e7e1; }
+.derivedOutputGroup > span, .fitExport > div > span { color: var(--muted); font-size: 11px; }
 .downloadGrid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.fitExport { padding: 15px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border: 1px solid #c6d5eb; border-radius: 10px; background: white; }
+.fitExport > div { display: grid; gap: 3px; }
+.fitExport > div > strong { font-size: 15px; }
+.fitExport > div > p { max-width: 670px; }
+.fitExportStatus { padding: 10px 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; font-size: 12px; }
+.fitExportStatus.success { color: var(--green); background: var(--green-soft); }
+.fitExportStatus.error { color: var(--red); background: var(--red-soft); }
+.compatibilityNote { padding: 0 2px; display: flex; align-items: flex-start; gap: 8px; color: var(--amber); font-size: 11px; line-height: 1.45; }
+.compatibilityNote svg { flex: 0 0 auto; margin-top: 1px; }
 
 .emptyState { min-height: 210px; padding: 34px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.62); display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 40px; }
 .distanceRuler { display: flex; align-items: center; color: var(--muted); font: 12px "SFMono-Regular", Consolas, monospace; }
@@ -216,7 +230,7 @@ details summary { cursor: pointer; }
   .attachment { min-width: 235px; }
   .tabContent { padding: 16px; }
   .repairEntry, .repairCandidates, .diffPanel, .appliedPanel { margin-left: 16px; margin-right: 16px; }
-  .repairEntry, .repairHeading, .appliedPanel { align-items: stretch; flex-direction: column; }
+  .repairEntry, .repairHeading { align-items: stretch; flex-direction: column; }
   .repairHeading { display: flex; }
   .metrics { grid-template-columns: 1fr; }
   .metric:nth-child(n) { border-right: 0; border-bottom: 1px solid var(--line); }
@@ -225,6 +239,9 @@ details summary { cursor: pointer; }
   .diffGrid > div { border-right: 0; border-bottom: 1px solid var(--line); }
   .emptyState { grid-template-columns: 1fr; }
   .rawRow { grid-template-columns: 110px 1fr; }
+  .derivedOutputGroup { grid-template-columns: 1fr; }
+  .downloadGrid { justify-content: flex-start; }
+  .fitExport { align-items: stretch; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

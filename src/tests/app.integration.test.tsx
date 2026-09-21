@@ -17,6 +17,9 @@ class MockWorker {
         repairRequests += 1;
         this.onmessage?.({ data: { type: 'repaired', candidates: createRepairCandidates(parsedFixture().normalized) } } as MessageEvent);
       }
+      if (message.type === 'export-fit') {
+        this.onmessage?.({ data: { type: 'fit-exported', buffer: new Uint8Array([1, 2, 3]).buffer, report: { messageCount: 8, recordCount: 5, developerFieldCount: 0, unknownMessageTypes: 0, outputBytes: 3, warnings: [] } } } as MessageEvent);
+      }
     });
   }
   terminate() {}
@@ -29,7 +32,7 @@ describe('complete local analysis and repair flow', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('waits for explicit confirmation before calculating, then applies and downloads derived JSON', async () => {
+  it('waits for explicit confirmation, then applies repair and exports a derived FIT file', async () => {
     const user = userEvent.setup();
     render(<App />);
     const file = new File([new Uint8Array([1, 2, 3])], 'test.fit', { type: 'application/octet-stream', lastModified: 1 });
@@ -55,8 +58,9 @@ describe('complete local analysis and repair flow', () => {
     await user.click(screen.getByRole('button', { name: 'Preview selected repair' }));
     expect(screen.getByText('Review derived changes')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Apply to derived JSON' }));
-    expect(screen.getByText('Derived JSON is ready')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Repaired JSON/ }));
+    expect(screen.getByText('Derived files are ready')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Create repaired FIT' }));
+    expect(await screen.findByText(/Validated and downloaded/)).toBeInTheDocument();
     expect(URL.createObjectURL).toHaveBeenCalled();
   });
 });
