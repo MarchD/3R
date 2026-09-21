@@ -34,6 +34,10 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .brand strong { font-size: 17px; line-height: 1; letter-spacing: -.02em; }
 .brand small { margin-top: 4px; color: var(--muted); }
 .privacy { display: flex; align-items: center; gap: 7px; color: var(--green); font-size: 13px; font-weight: 650; }
+.headerActions { display: flex; align-items: center; gap: 18px; }
+.languagePicker { min-height: 34px; padding: 0 8px; display: flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--muted); }
+.languagePicker select { border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 650; cursor: pointer; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 main { max-width: 1500px; margin: 0 auto; padding: 48px clamp(20px, 4vw, 64px) 80px; }
 
 .uploadSection { display: grid; grid-template-columns: minmax(300px, .78fr) minmax(420px, 1.22fr); gap: clamp(28px, 5vw, 78px); align-items: end; margin-bottom: 36px; }
@@ -241,7 +245,8 @@ details summary { cursor: pointer; }
 }
 @media (max-width: 760px) {
   .appHeader { height: 62px; }
-  .privacy { font-size: 0; }
+  .privacy { display: none; }
+  .headerActions { gap: 8px; }
   main { padding-top: 30px; }
   .sectionIntro h1 { font-size: 39px; }
   .dropzone { grid-template-columns: auto 1fr; }

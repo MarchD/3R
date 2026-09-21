@@ -5,6 +5,7 @@ import type { RawFitMessage } from '../../models/fit';
 import { copyJson } from '../../utils/clipboard';
 import { downloadJson } from '../../utils/download';
 import { safeStringify } from '../../utils/json';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 function MessageRow({ index, style, messages }: RowComponentProps<{ messages: RawFitMessage[] }>) {
   const message = messages[index];
@@ -12,6 +13,7 @@ function MessageRow({ index, style, messages }: RowComponentProps<{ messages: Ra
 }
 
 export function RawMessagesView({ messages, onCopied }: { messages: RawFitMessage[]; onCopied: () => void }) {
+  const { t } = useLanguage();
   const [type, setType] = useState('all');
   const [query, setQuery] = useState('');
   const types = useMemo(() => [...new Set(messages.map((message) => message.messageType))].sort(), [messages]);
@@ -23,12 +25,12 @@ export function RawMessagesView({ messages, onCopied }: { messages: RawFitMessag
   return (
     <section>
       <div className="toolbar">
-        <label className="search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search raw messages" /></label>
-        <label className="depthControl">Message type <select value={type} onChange={(event) => setType(event.target.value)}><option value="all">All types</option>{types.map((item) => <option key={item}>{item}</option>)}</select></label>
-        <button className="button secondary" onClick={() => copyJson(messages).then(onCopied)}><Copy size={15} /> Copy raw JSON</button>
-        <button className="button secondary" onClick={() => downloadJson('activity.raw.json', messages)}><Download size={15} /> Download</button>
+        <label className="search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('raw.search')} /></label>
+        <label className="depthControl">{t('raw.type')} <select value={type} onChange={(event) => setType(event.target.value)}><option value="all">{t('raw.all')}</option>{types.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <button className="button secondary" onClick={() => copyJson(messages).then(onCopied)}><Copy size={15} /> {t('raw.copy')}</button>
+        <button className="button secondary" onClick={() => downloadJson('activity.raw.json', messages)}><Download size={15} /> {t('json.download')}</button>
       </div>
-      <p className="resultCount">Showing {filtered.length.toLocaleString()} of {messages.length.toLocaleString()} messages</p>
+      <p className="resultCount">{t('raw.showing', { shown: filtered.length.toLocaleString(), total: messages.length.toLocaleString() })}</p>
       <List className="virtualList" rowComponent={MessageRow} rowCount={filtered.length} rowHeight={76} rowProps={{ messages: filtered }} overscanCount={8} />
     </section>
   );

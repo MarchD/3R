@@ -1,4 +1,4 @@
-import { Activity, FileJson2, Gauge, ListTree, ShieldCheck, Table2 } from 'lucide-react';
+import { Activity, FileJson2, Gauge, Globe2, ListTree, ShieldCheck, Table2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivitySummary } from '../components/ActivitySummary/ActivitySummary';
 import { AnomalyPanel } from '../components/AnomalyPanel/AnomalyPanel';
@@ -15,19 +15,13 @@ import { validateRepairEligibility } from '../fit/repair/validateRepairEligibili
 import type { Attachment, FitParseError } from '../models/fit';
 import type { RepairCandidate, RepairState } from '../models/repair';
 import { downloadBlob } from '../utils/download';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type Tab = 'summary' | 'normalized' | 'raw' | 'records' | 'issues';
-const tabs: { id: Tab; label: string; icon: typeof Gauge }[] = [
-  { id: 'summary', label: 'Summary', icon: Gauge },
-  { id: 'normalized', label: 'Normalized JSON', icon: FileJson2 },
-  { id: 'raw', label: 'Raw FIT JSON', icon: ListTree },
-  { id: 'records', label: 'Records', icon: Table2 },
-  { id: 'issues', label: 'Issues', icon: ShieldCheck },
-];
-
 const initialRepair: RepairState = { status: 'not-requested' };
 
 export function App() {
+  const { language, setLanguage, t } = useLanguage();
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [activeTab, setActiveTab] = useState<Tab>('summary');
@@ -146,7 +140,7 @@ export function App() {
           const baseName = selected.file.name.replace(/\.fit$/i, '');
           downloadBlob(`${baseName}.repaired.fit`, new Blob([event.data.buffer], { type: 'application/octet-stream' }));
           setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'success', report: event.data.report } }));
-          setToast('Repaired FIT validated and downloaded');
+          setToast(t('toast.fitDownloaded'));
         } else if (event.data.type === 'error') {
           setFitExportStates((current) => ({ ...current, [selectedId]: { status: 'error', message: event.data.error.message } }));
         }
@@ -168,24 +162,32 @@ export function App() {
   const content = useMemo(() => {
     if (!result) return null;
     if (activeTab === 'summary') return <ActivitySummary result={result} />;
-    if (activeTab === 'normalized') return <JsonViewer value={result.normalized} filename="activity.normalized.json" label="normalized JSON" onCopied={() => setToast('Copied to clipboard')} />;
-    if (activeTab === 'raw') return <RawMessagesView messages={result.raw.messages} onCopied={() => setToast('Copied to clipboard')} />;
+    if (activeTab === 'normalized') return <JsonViewer value={result.normalized} filename="activity.normalized.json" label={t('tab.normalized')} onCopied={() => setToast(t('toast.copied'))} />;
+    if (activeTab === 'raw') return <RawMessagesView messages={result.raw.messages} onCopied={() => setToast(t('toast.copied'))} />;
     if (activeTab === 'records') return <RecordsTable records={result.normalized.records} />;
     return <AnomalyPanel anomalies={result.anomalies} />;
-  }, [activeTab, result]);
+  }, [activeTab, result, t]);
+
+  const tabs: { id: Tab; label: string; icon: typeof Gauge }[] = [
+    { id: 'summary', label: t('tab.summary'), icon: Gauge },
+    { id: 'normalized', label: t('tab.normalized'), icon: FileJson2 },
+    { id: 'raw', label: t('tab.raw'), icon: ListTree },
+    { id: 'records', label: t('tab.records'), icon: Table2 },
+    { id: 'issues', label: t('tab.issues'), icon: ShieldCheck },
+  ];
 
   return (
     <div className="appShell">
-      <header className="appHeader"><div className="brand"><span><Activity size={21} /></span><div><strong>3R</strong><small>FIT repair workbench</small></div></div><div className="privacy"><ShieldCheck size={16} /> Files stay in this browser</div></header>
+      <header className="appHeader"><div className="brand"><span><Activity size={21} /></span><div><strong>3R</strong><small>{t('app.subtitle')}</small></div></div><div className="headerActions"><div className="privacy"><ShieldCheck size={16} /> {t('app.privacy')}</div><label className="languagePicker"><Globe2 size={15} aria-hidden="true" /><span className="srOnly">{t('language.label')}</span><select aria-label={t('language.label')} value={language} onChange={(event) => setLanguage(event.target.value as 'en' | 'uk')}><option value="en">English</option><option value="uk">Українська</option></select></label></div></header>
       <main>
-        <section className="uploadSection"><div className="sectionIntro"><h1>Inspect the evidence.<br />Repair only by choice.</h1><p>Decode Garmin FIT files locally, investigate every message, then create a separate distance repair when the recorded value cannot be trusted.</p></div><FileDropzone onFiles={addFiles} onRejected={setToast} /></section>
-        {attachments.length > 0 && <div className="workbench"><aside><div className="asideHeading"><strong>Attachments</strong><span>{attachments.length}</span></div><AttachmentList attachments={attachments} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); setActiveTab('summary'); }} onRemove={remove} onRetry={(id) => { const item = attachments.find((attachment) => attachment.id === id); if (item) void parseAttachment(id, item.file); }} /></aside><section className="workspace">
-          {!selected && <div className="emptyPanel">Select a FIT file to inspect it.</div>}
-          {selected?.state.status === 'parsing' && <div className="loadingPanel" aria-live="polite"><span className="spinner" /><strong>Parsing locally</strong><p>The file is being decoded in a background worker.</p></div>}
-          {selected?.state.status === 'error' && <div className="errorPanel" aria-live="assertive"><strong>This file could not be decoded</strong><p>{selected.state.error.message}</p><button className="button secondary" onClick={() => void parseAttachment(selected.id, selected.file)}>Retry parsing</button></div>}
-          {result && <><div className="fileHeading"><div><span>Selected file</span><h2>{result.file.name}</h2></div><div className={`statusPill ${result.integrity.complete ? 'complete' : 'partial'}`}>{result.integrity.complete ? 'Complete decode' : 'Partial decode'}</div></div><nav className="tabs" aria-label="Activity data views">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}><Icon size={16} />{label}{id === 'issues' && result.anomalies.length > 0 && <span>{result.anomalies.length}</span>}</button>)}</nav><div className="tabContent">{content}</div><RepairWizard result={result} state={repairState} onState={setRepairState} onCalculate={calculateRepairs} onApply={applyCandidate} fitExportState={fitExportState} onExportFit={() => void exportFit()} onCopied={() => setToast('Copied to clipboard')} /></>}
+        <section className="uploadSection"><div className="sectionIntro"><h1>{t('hero.title').split('\n').map((line, index) => <span key={line}>{line}{index === 0 && <br />}</span>)}</h1><p>{t('hero.body')}</p></div><FileDropzone onFiles={addFiles} onRejected={setToast} /></section>
+        {attachments.length > 0 && <div className="workbench"><aside><div className="asideHeading"><strong>{t('attachments.title')}</strong><span>{attachments.length}</span></div><AttachmentList attachments={attachments} selectedId={selectedId} onSelect={(id) => { setSelectedId(id); setActiveTab('summary'); }} onRemove={remove} onRetry={(id) => { const item = attachments.find((attachment) => attachment.id === id); if (item) void parseAttachment(id, item.file); }} /></aside><section className="workspace">
+          {!selected && <div className="emptyPanel">{t('workspace.select')}</div>}
+          {selected?.state.status === 'parsing' && <div className="loadingPanel" aria-live="polite"><span className="spinner" /><strong>{t('workspace.parsing')}</strong><p>{t('workspace.parsingBody')}</p></div>}
+          {selected?.state.status === 'error' && <div className="errorPanel" aria-live="assertive"><strong>{t('workspace.decodeError')}</strong><p>{selected.state.error.message}</p><button className="button secondary" onClick={() => void parseAttachment(selected.id, selected.file)}>{t('workspace.retry')}</button></div>}
+          {result && <><div className="fileHeading"><div><span>{t('workspace.selected')}</span><h2>{result.file.name}</h2></div><div className={`statusPill ${result.integrity.complete ? 'complete' : 'partial'}`}>{result.integrity.complete ? t('workspace.complete') : t('workspace.partial')}</div></div><nav className="tabs" aria-label={t('workspace.views')}>{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={activeTab === id ? 'active' : ''} onClick={() => setActiveTab(id)}><Icon size={16} />{label}{id === 'issues' && result.anomalies.length > 0 && <span>{result.anomalies.length}</span>}</button>)}</nav><div className="tabContent">{content}</div><RepairWizard result={result} state={repairState} onState={setRepairState} onCalculate={calculateRepairs} onApply={applyCandidate} fitExportState={fitExportState} onExportFit={() => void exportFit()} onCopied={() => setToast(t('toast.copied'))} /></>}
         </section></div>}
-        {!attachments.length && <section className="emptyState"><div className="distanceRuler"><span>raw.fit</span><i /><span>inspect</span><i /><span>derive.json</span></div><div><strong>No activity loaded</strong><p>Attach one or more .fit files to begin. Each file is processed independently.</p></div></section>}
+        {!attachments.length && <section className="emptyState"><div className="distanceRuler"><span>{t('empty.raw')}</span><i /><span>{t('empty.inspect')}</span><i /><span>{t('empty.derive')}</span></div><div><strong>{t('empty.title')}</strong><p>{t('empty.body')}</p></div></section>}
         <GarminWorkflowGuide />
       </main>
       {toast && <div className="toast" role="status">{toast}</div>}

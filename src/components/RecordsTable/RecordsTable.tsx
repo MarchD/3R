@@ -2,6 +2,7 @@ import { Columns3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { List, type RowComponentProps } from 'react-window';
 import type { NormalizedRecord } from '../../models/fit';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const columnDefinitions = {
   index: { label: 'Index', value: (r: NormalizedRecord) => r.index },
@@ -24,13 +25,14 @@ function RecordRow({ index, style, records, columns }: RowComponentProps<{ recor
 }
 
 export function RecordsTable({ records }: { records: NormalizedRecord[] }) {
+  const { t } = useLanguage();
   const [columns, setColumns] = useState<Column[]>(defaults);
   const rowProps = useMemo(() => ({ records, columns }), [records, columns]);
   return (
     <section className="recordsPanel">
-      <details className="columnPicker"><summary><Columns3 size={16} /> Configure columns</summary><div>{defaults.map((column) => <label key={column}><input type="checkbox" checked={columns.includes(column)} onChange={() => setColumns((current) => current.includes(column) ? current.filter((item) => item !== column) : [...current, column])} /> {columnDefinitions[column].label}</label>)}</div></details>
+      <details className="columnPicker"><summary><Columns3 size={16} /> {t('records.configure')}</summary><div>{defaults.map((column) => <label key={column}><input type="checkbox" checked={columns.includes(column)} onChange={() => setColumns((current) => current.includes(column) ? current.filter((item) => item !== column) : [...current, column])} /> {t(`records.${column}`)}</label>)}</div></details>
       <div className="recordTableScroll">
-        <div className="recordHeader" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>{columns.map((column) => <strong key={column}>{columnDefinitions[column].label}</strong>)}</div>
+        <div className="recordHeader" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(120px, 1fr))` }}>{columns.map((column) => <strong key={column}>{t(`records.${column}`)}</strong>)}</div>
         <List className="recordList" rowComponent={RecordRow} rowCount={records.length} rowHeight={42} rowProps={rowProps} overscanCount={12} />
       </div>
     </section>

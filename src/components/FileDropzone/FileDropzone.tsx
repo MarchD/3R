@@ -1,5 +1,6 @@
 import { FileUp } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   onFiles: (files: File[]) => void;
@@ -7,22 +8,23 @@ interface Props {
 }
 
 export function FileDropzone({ onFiles, onRejected }: Props) {
+  const { t } = useLanguage();
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'application/octet-stream': ['.fit'] },
     multiple: true,
     onDropAccepted: onFiles,
-    onDropRejected: () => onRejected('Only non-empty .fit files can be attached.'),
+    onDropRejected: () => onRejected(t('drop.rejected')),
     validator: (file) => file.size === 0 ? { code: 'empty-file', message: 'The file is empty.' } : null,
   });
   return (
     <div {...getRootProps({ className: `dropzone ${isDragActive ? 'dropzoneActive' : ''}` })}>
-      <input {...getInputProps()} aria-label="Choose FIT files" />
+      <input {...getInputProps()} aria-label={t('drop.chooseLabel')} />
       <FileUp size={24} aria-hidden="true" />
       <div>
-        <strong>{isDragActive ? 'Drop FIT files here' : 'Attach FIT files'}</strong>
-        <span>Drop files here or choose from your device</span>
+        <strong>{isDragActive ? t('drop.active') : t('drop.title')}</strong>
+        <span>{t('drop.body')}</span>
       </div>
-      <button type="button" className="button secondary" tabIndex={-1}>Choose files</button>
+      <button type="button" className="button secondary" tabIndex={-1}>{t('drop.choose')}</button>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../app/App';
 import { createRepairCandidates } from '../fit/repair/createRepairCandidates';
 import { parsedFixture } from './fixtures';
+import { LanguageProvider } from '../i18n/LanguageContext';
 
 let repairRequests = 0;
 let workerParsedResult = parsedFixture();
@@ -28,6 +29,7 @@ class MockWorker {
 
 describe('complete local analysis and repair flow', () => {
   beforeEach(() => {
+    localStorage.clear();
     repairRequests = 0;
     workerParsedResult = parsedFixture();
     vi.stubGlobal('Worker', MockWorker);
@@ -39,7 +41,7 @@ describe('complete local analysis and repair flow', () => {
 
   it('waits for explicit confirmation, then applies repair and exports a derived FIT file', async () => {
     const user = userEvent.setup();
-    render(<App />);
+    render(<LanguageProvider><App /></LanguageProvider>);
     const file = new File([new Uint8Array([1, 2, 3])], 'test.fit', { type: 'application/octet-stream', lastModified: 1 });
     await user.upload(screen.getByLabelText('Choose FIT files'), file);
     expect(await screen.findByText('Complete decode')).toBeInTheDocument();
@@ -62,7 +64,7 @@ describe('complete local analysis and repair flow', () => {
     await user.click(choices[0]);
     await user.click(screen.getByRole('button', { name: 'Preview selected repair' }));
     expect(screen.getByText('Review derived changes')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Apply to derived JSON' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
     expect(screen.getByText('Derived files are ready')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Repair patch' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Copy patch' })).not.toBeInTheDocument();
@@ -75,7 +77,7 @@ describe('complete local analysis and repair flow', () => {
     workerParsedResult = parsedFixture();
     workerParsedResult.normalized.sport = 'cycling';
     const user = userEvent.setup();
-    render(<App />);
+    render(<LanguageProvider><App /></LanguageProvider>);
     const file = new File([new Uint8Array([1])], 'ride.fit', { type: 'application/octet-stream', lastModified: 2 });
     await user.upload(screen.getByLabelText('Choose FIT files'), file);
     expect(await screen.findByText('Repair unavailable')).toBeInTheDocument();
@@ -83,5 +85,16 @@ describe('complete local analysis and repair flow', () => {
     expect(screen.getByText('Detected: cycling')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Repair activity' })).not.toBeInTheDocument();
     expect(repairRequests).toBe(0);
+  });
+
+  it('switches the complete interface to Ukrainian and remembers the choice', async () => {
+    const user = userEvent.setup();
+    render(<LanguageProvider><App /></LanguageProvider>);
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'uk');
+    expect(screen.getByRole('heading', { name: /Перевірте дані/ })).toBeInTheDocument();
+    expect(screen.getByText('Файли залишаються у цьому браузері')).toBeInTheDocument();
+    expect(screen.getByText('З Garmin Connect до 3R — і назад')).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('uk');
+    expect(localStorage.getItem('3r-language')).toBe('uk');
   });
 });
