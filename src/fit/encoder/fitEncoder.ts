@@ -21,6 +21,7 @@ export interface FitExportReport {
   unknownMessageTypes: number;
   outputBytes: number;
   shiftedTimestampFields: number;
+  positionPatchedRecords: number;
   warnings: string[];
 }
 
@@ -66,6 +67,14 @@ function dateMs(value: unknown): number | undefined {
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'number') return value * 1000 + Utils.FIT_EPOCH_MS;
   return undefined;
+}
+
+function degreesToSemicircles(value: number): number {
+  return Math.round((value * 2 ** 31) / 180);
+}
+
+function semicirclesToDegrees(value: unknown): number | undefined {
+  return typeof value === 'number' ? (value * 180) / 2 ** 31 : undefined;
 }
 
 function shiftMessageTimestamps(
@@ -156,6 +165,9 @@ export function encodeRepairedFit(
     : 0;
 
   const patches = new Map(patch.recordPatches.map((item) => [item.recordIndex, item]));
+  const positionPatches = new Map(
+    (patch.positionPatches ?? []).map((item) => [item.recordIndex, item]),
+  );
   const hasDistanceRepair = patches.size > 0;
   const patchedRecords: { timestamp?: number; distanceM: number; speedMps: number }[] = [];
   let recordIndex = 0;
@@ -174,6 +186,11 @@ export function encodeRepairedFit(
         distanceM: recordPatch.distanceM,
         speedMps: recordPatch.derivedSpeedMps ?? 0,
       });
+    }
+    const positionPatch = positionPatches.get(recordIndex);
+    if (positionPatch) {
+      item.message.positionLat = degreesToSemicircles(positionPatch.latitude);
+      item.message.positionLong = degreesToSemicircles(positionPatch.longitude);
     }
     recordIndex += 1;
   }
@@ -248,6 +265,19 @@ export function encodeRepairedFit(
   if (validationRecords.length !== recordIndex) {
     throw new Error('The encoded FIT file did not preserve every record.');
   }
+  for (const positionPatch of positionPatches.values()) {
+    const validationRecord = validationRecords[positionPatch.recordIndex];
+    const latitude = semicirclesToDegrees(validationRecord?.positionLat);
+    const longitude = semicirclesToDegrees(validationRecord?.positionLong);
+    if (
+      latitude == null ||
+      longitude == null ||
+      Math.abs(latitude - positionPatch.latitude) > 0.00001 ||
+      Math.abs(longitude - positionPatch.longitude) > 0.00001
+    ) {
+      throw new Error('The encoded FIT file did not preserve every reconstructed position.');
+    }
+  }
   if (
     hasDistanceRepair &&
     expectedDistance != null &&
@@ -273,6 +303,7 @@ export function encodeRepairedFit(
       unknownMessageTypes: unknownMessageNumbers.size,
       outputBytes: bytes.byteLength,
       shiftedTimestampFields,
+      positionPatchedRecords: positionPatches.size,
       warnings: unknownMessageNumbers.size
         ? [
             `${unknownMessageNumbers.size} unknown message type(s) were preserved using their original field definitions.`,

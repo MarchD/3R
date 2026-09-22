@@ -720,6 +720,509 @@ details summary {
   font-size: 11px;
 }
 
+.alphaGps {
+  margin: 0 24px 16px;
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+  border: 1px solid #e4c887;
+  border-left: 4px solid var(--amber);
+  border-radius: 11px;
+  background: linear-gradient(90deg, var(--amber-soft), #fff 38%);
+}
+.alphaGpsHeading {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.alphaGpsIcon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--amber);
+  background: white;
+  box-shadow: inset 0 0 0 1px #ead49d;
+}
+.alphaGpsHeading h2 {
+  margin: 3px 0 4px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.alphaGpsHeading p,
+.alphaGpsRequest p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.alphaBadge {
+  color: var(--amber);
+  font-size: 11px;
+  font-weight: 750;
+}
+.alphaEvidence {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid rgba(168, 97, 8, 0.18);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.78);
+}
+.alphaEvidence > div {
+  padding: 11px 13px;
+  display: grid;
+  gap: 2px;
+  border-right: 1px solid rgba(168, 97, 8, 0.14);
+}
+.alphaEvidence > div:last-child {
+  border-right: 0;
+}
+.alphaEvidence strong {
+  font-size: 16px;
+}
+.alphaEvidence span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.startLocationEditor {
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(36, 87, 214, 0.2);
+  border-radius: 10px;
+  background: white;
+}
+.startLocationHeading {
+  padding: 14px 14px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.startLocationHeading h3 {
+  margin: 2px 0 4px;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+}
+.startLocationHeading p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.sectionEyebrow {
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.startLocationHeading .textButton {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.startSearch {
+  position: relative;
+  z-index: 500;
+  padding: 0 14px;
+}
+.startSearch > label,
+.coordinateEditor label span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+.startSearchControl {
+  height: 40px;
+  padding-left: 11px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: white;
+}
+.startSearchControl:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(36, 87, 214, 0.1);
+}
+.startSearchControl input,
+.coordinateEditor input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+}
+.startSearchControl button {
+  height: 30px;
+  margin-right: 4px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  background: var(--blue);
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.startSearchControl button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.fieldError {
+  margin: 6px 0 0;
+  color: var(--red);
+  font-size: 11px;
+}
+.placeResults {
+  position: absolute;
+  top: calc(100% - 1px);
+  right: 14px;
+  left: 14px;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 12px 28px rgba(27, 38, 59, 0.16);
+}
+.placeResults button {
+  width: 100%;
+  padding: 9px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.placeResults button:hover,
+.placeResults button:focus-visible {
+  background: var(--wash);
+}
+.placeResults svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--blue);
+}
+.coordinateEditor {
+  padding: 0 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+.coordinateEditor label {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--wash);
+}
+.coordinateEditor label:focus-within {
+  border-color: var(--blue);
+}
+.coordinateEditor label span {
+  margin-bottom: 2px;
+}
+.coordinateEditor input {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.startLocationMap {
+  z-index: 0;
+  height: 350px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #e7ecf1;
+}
+.startLocationMap .leaflet-control-attribution {
+  font-size: 9px;
+}
+.startMapMarkerShell {
+  background: transparent;
+}
+.startMapMarker {
+  width: 22px;
+  height: 22px;
+  display: block;
+  box-sizing: border-box;
+  border: 4px solid white;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 7px rgba(20, 31, 52, 0.35);
+  transform: rotate(-45deg);
+}
+.startMapMarker.recorded {
+  background: var(--red);
+}
+.startMapMarker.selected {
+  background: var(--blue);
+}
+.startMapLegend {
+  padding: 0 14px 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.startMapLegend span::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 5px;
+  display: inline-block;
+  border-radius: 50%;
+}
+.startMapLegend .recorded::before {
+  background: var(--red);
+}
+.startMapLegend .selected::before {
+  background: var(--blue);
+}
+.startMapLegend em {
+  margin-left: auto;
+  font-style: normal;
+}
+.alphaGpsRequest {
+  padding: 13px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-radius: 9px;
+  color: var(--ink);
+  background: white;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.alphaGpsRequest strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+.button.alphaButton {
+  flex: 0 0 auto;
+  color: white;
+  background: var(--amber);
+}
+.button.alphaButton:hover:not(:disabled) {
+  background: #844b05;
+}
+.alphaGpsResult {
+  display: grid;
+  gap: 13px;
+}
+.routeComparisonMap {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(36, 87, 214, 0.18);
+  border-radius: 10px;
+  background: white;
+}
+.routeComparisonMap figcaption {
+  min-height: 43px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+  font-size: 10px;
+}
+.routeComparisonMap figcaption strong {
+  margin-right: auto;
+  font-size: 12px;
+}
+.routeComparisonMap figcaption span::before {
+  content: '';
+  width: 17px;
+  height: 3px;
+  margin-right: 6px;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.routeComparisonMap figcaption .shifted::before {
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--amber) 0 5px, transparent 5px 8px);
+}
+.routeComparisonMap figcaption .matched::before {
+  background: var(--blue);
+}
+.routeComparisonMap figcaption .start::before,
+.routeComparisonMap figcaption .end::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.routeComparisonMap figcaption .start::before {
+  background: var(--green);
+}
+.routeComparisonMap figcaption .end::before {
+  background: var(--red);
+}
+.routeComparisonCanvas {
+  height: 410px;
+  background: #e7ecf1;
+}
+.routeComparisonCanvas .leaflet-control-attribution {
+  font-size: 9px;
+}
+.alphaGpsVerdict {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.alphaGpsVerdict > div {
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+  border-radius: 8px;
+  background: var(--wash);
+}
+.alphaGpsVerdict span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.alphaGpsVerdict strong {
+  font-size: 14px;
+}
+.alphaGpsVerdict .confidence.high {
+  color: var(--green);
+}
+.alphaGpsVerdict .confidence.medium {
+  color: var(--amber);
+}
+.alphaGpsVerdict .confidence.low {
+  color: var(--red);
+}
+.matchEvidencePanel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+}
+.matchEvidenceHeading {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.matchEvidenceHeading h3 {
+  margin: 0 0 2px;
+  font-size: 13px;
+}
+.matchEvidenceHeading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+.matchEvidenceHeading > strong {
+  color: var(--blue);
+  font-size: 19px;
+}
+.matchEvidenceRows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.matchEvidenceRow {
+  padding: 11px 14px;
+  display: grid;
+  grid-template-columns: minmax(100px, auto) minmax(70px, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+.matchEvidenceRow:nth-child(2n) {
+  border-right: 0;
+}
+.matchEvidenceRow:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.matchEvidenceRow > span {
+  font-weight: 700;
+}
+.matchEvidenceTrack {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--wash);
+}
+.matchEvidenceTrack i {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: var(--blue);
+}
+.matchEvidenceRow > strong {
+  min-width: 42px;
+  text-align: right;
+  font-size: 10px;
+}
+.matchEvidenceRow small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 9px;
+}
+.matchEvidenceRow.unavailable {
+  color: var(--muted);
+}
+.matchEvidenceRow.unavailable .matchEvidenceTrack {
+  background: repeating-linear-gradient(135deg, var(--wash) 0 4px, #fff 4px 8px);
+}
+.alphaGpsWarning,
+.gpsRepairSummary {
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 8px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.alphaGpsActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.alphaGpsError {
+  margin: 0;
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 650;
+}
+.alphaGps footer {
+  color: var(--muted);
+  font-size: 10px;
+}
+.alphaGps footer a {
+  color: var(--blue);
+}
+
 .startTimeRepair {
   margin: 0 24px 16px;
   padding: 18px;
@@ -1086,6 +1589,10 @@ details summary {
   color: var(--text);
   font-size: 13px;
 }
+.gpsRepairSummary {
+  color: var(--blue-dark);
+  background: var(--blue-soft);
+}
 .derivedOutputGroup {
   padding-top: 14px;
   display: grid;
@@ -1377,6 +1884,64 @@ details summary {
   main {
     padding-top: 30px;
   }
+  .alphaEvidence {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .alphaEvidence > div:nth-child(2) {
+    border-right: 0;
+  }
+  .alphaEvidence > div:nth-child(-n + 2) {
+    border-bottom: 1px solid rgba(168, 97, 8, 0.14);
+  }
+  .alphaGpsRequest {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .startLocationHeading {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .coordinateEditor {
+    grid-template-columns: 1fr 1fr;
+  }
+  .coordinateEditor .button {
+    grid-column: 1 / -1;
+  }
+  .startLocationMap {
+    height: 300px;
+  }
+  .startMapLegend {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .startMapLegend em {
+    width: 100%;
+    margin-left: 0;
+  }
+  .alphaGpsVerdict {
+    grid-template-columns: 1fr;
+  }
+  .routeComparisonMap figcaption {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+  }
+  .routeComparisonMap figcaption strong {
+    width: 100%;
+  }
+  .routeComparisonCanvas {
+    height: 340px;
+  }
+  .matchEvidenceRows {
+    grid-template-columns: 1fr;
+  }
+  .matchEvidenceRow:nth-child(n) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .matchEvidenceRow:last-child {
+    border-bottom: 0;
+  }
   .sectionIntro h1 {
     font-size: 39px;
   }
@@ -1406,7 +1971,9 @@ details summary {
   .repairEntry,
   .repairCandidates,
   .diffPanel,
-  .appliedPanel {
+  .appliedPanel,
+  .alphaGps,
+  .startTimeRepair {
     margin-left: 16px;
     margin-right: 16px;
   }

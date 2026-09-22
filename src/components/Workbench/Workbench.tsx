@@ -3,7 +3,9 @@ import { useMemo, type ReactNode } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import type { FitWorkbenchController, WorkbenchTab } from '../../hooks/useFitWorkbench';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { isAlphaVersion } from '../../utils/appVersion';
 import { ActivitySummary } from '../ActivitySummary/ActivitySummary';
+import { AlphaGpsRepair } from '../AlphaGpsRepair/AlphaGpsRepair';
 import { AnomalyPanel } from '../AnomalyPanel/AnomalyPanel';
 import { AttachmentList } from '../AttachmentList/AttachmentList';
 import { JsonViewer } from '../JsonViewer/JsonViewer';
@@ -18,6 +20,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
   const {
     activeTab,
     applyCandidate,
+    applyGpsProposal,
     attachments,
     calculateRepairs,
     correctedStartTime,
@@ -34,6 +37,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
     setCorrectedStartTime,
     setRepairState,
   } = workbench;
+  const alphaVersion = isAlphaVersion();
 
   const content = useMemo(() => {
     if (!result) return null;
@@ -128,6 +132,9 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
               ))}
             </nav>
             <div className="tabContent">{content}</div>
+            {alphaVersion && repairState.status === 'not-requested' && (
+              <AlphaGpsRepair result={result} onApply={applyGpsProposal} />
+            )}
             {repairState.status === 'not-requested' && (
               <StartTimeRepair result={result} onChange={setCorrectedStartTime} />
             )}

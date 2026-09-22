@@ -5,6 +5,7 @@ import {
   Download,
   FileDown,
   LoaderCircle,
+  MapPinned,
   ShieldAlert,
   Wrench,
 } from 'lucide-react';
@@ -164,6 +165,16 @@ export function RepairWizard({
             </span>
           </div>
         )}
+        {state.patch.positionPatches?.length ? (
+          <div className="gpsRepairSummary">
+            <MapPinned size={17} aria-hidden="true" />
+            <span>
+              {t('alphaGps.applied', {
+                records: state.patch.positionPatches.length.toLocaleString(),
+              })}
+            </span>
+          </div>
+        ) : null}
         <div className="derivedOutputGroup">
           <span>{t('repair.jsonEvidence')}</span>
           <div className="downloadGrid">

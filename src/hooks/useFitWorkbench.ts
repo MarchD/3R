@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FitExportUiState } from '../components/RepairWizard/RepairWizard';
 import { useToast } from '../contexts/ToastContext';
+import type { GpsMatchProposal } from '../fit/gps/types';
+import { applyGpsRepair } from '../fit/repair/applyGpsRepair';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
 import { validateRepairEligibility } from '../fit/repair/validateRepairEligibility';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -250,6 +252,32 @@ export function useFitWorkbench() {
     [correctedStartTime, repairState, result, selectedId, setRepairState],
   );
 
+  const applyGpsProposal = useCallback(
+    (proposal: GpsMatchProposal) => {
+      if (!result) return;
+      try {
+        const applied = applyGpsRepair(
+          result.file.name,
+          result.normalized,
+          proposal,
+          correctedStartTime,
+        );
+        setRepairState({ status: 'applied', ...applied, candidates: [] });
+        if (selectedId) {
+          setFitExportStates((current) => ({
+            ...current,
+            [selectedId]: INITIAL_EXPORT_STATE,
+          }));
+        }
+      } catch (cause) {
+        showToast(
+          cause instanceof Error ? cause.message : 'The matched route could not be applied.',
+        );
+      }
+    },
+    [correctedStartTime, result, selectedId, setRepairState, showToast],
+  );
+
   const exportFit = useCallback(async () => {
     if (!selectedId || !selected || repairState.status !== 'applied') return;
     const key = `export-${selectedId}`;
@@ -308,6 +336,7 @@ export function useFitWorkbench() {
     activeTab,
     addFiles,
     applyCandidate,
+    applyGpsProposal,
     attachments,
     calculateRepairs,
     correctedStartTime,

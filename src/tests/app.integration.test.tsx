@@ -50,6 +50,7 @@ class MockWorker {
               developerFieldCount: 0,
               unknownMessageTypes: 0,
               outputBytes: 3,
+              positionPatchedRecords: 0,
               warnings: [],
             },
           },
@@ -63,6 +64,7 @@ class MockWorker {
 
 describe('complete local analysis and repair flow', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/');
     localStorage.clear();
     repairRequests = 0;
     workerParsedResult = parsedFixture();
@@ -83,6 +85,7 @@ describe('complete local analysis and repair flow', () => {
     });
     await user.upload(screen.getByLabelText('Choose FIT files'), file);
     expect(await screen.findByText('Complete decode')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'GPS repair lab' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Normalized JSON' }));
     expect(screen.getByPlaceholderText('Search key or value')).toBeInTheDocument();
@@ -179,5 +182,20 @@ describe('complete local analysis and repair flow', () => {
     expect(screen.getByRole('heading', { name: /Перевірте дані/ })).toBeInTheDocument();
     expect(document.documentElement.lang).toBe('uk');
     expect(localStorage.getItem('3r-language')).toBeNull();
+  });
+
+  it('reveals GPS repair only through the alpha query parameter', async () => {
+    window.history.replaceState({}, '', '/?version=alpha');
+    const user = userEvent.setup();
+    renderApp();
+    const file = new File([new Uint8Array([1])], 'gps.fit', {
+      type: 'application/octet-stream',
+      lastModified: 4,
+    });
+
+    await user.upload(screen.getByLabelText('Choose FIT files'), file);
+
+    expect(await screen.findByRole('heading', { name: 'GPS repair lab' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send trace and find route' })).toBeEnabled();
   });
 });

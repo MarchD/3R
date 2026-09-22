@@ -5,7 +5,7 @@ export type DistanceRepairAlgorithm =
   | 'steps_weighted_mean_step_length'
   | 'cleaned_speed_integration';
 
-export type RepairAlgorithm = DistanceRepairAlgorithm | 'timestamp_shift';
+export type RepairAlgorithm = DistanceRepairAlgorithm | 'timestamp_shift' | 'gps_map_match';
 
 export interface ActivitySummary {
   totalDistanceM?: number;
@@ -18,6 +18,12 @@ export interface RecordPatch {
   recordIndex: number;
   distanceM: number;
   derivedSpeedMps?: number;
+}
+
+export interface PositionPatch {
+  recordIndex: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface RepairCalculation {
@@ -51,6 +57,7 @@ export interface RepairPatch {
   originalSummary: ActivitySummary;
   repairedSummary: ActivitySummary;
   recordPatches: RecordPatch[];
+  positionPatches?: PositionPatch[];
   timestampOffsetMs?: number;
   originalStartTime?: string;
   correctedStartTime?: string;
@@ -66,6 +73,7 @@ export interface RepairedActivity extends NormalizedActivity {
     timestampOffsetMs?: number;
     originalStartTime?: string;
     correctedStartTime?: string;
+    positionPatchedRecords?: number;
   };
 }
 

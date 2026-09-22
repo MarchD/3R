@@ -124,4 +124,43 @@ describe('FIT export', () => {
     expect(decoded.messages.recordMesgs?.[0]?.heartRate).toBe(140);
     expect(exported.report.shiftedTimestampFields).toBeGreaterThan(0);
   });
+
+  it('writes and validates reconstructed positions without changing sensor data', () => {
+    const source = sourceFit();
+    const patch: RepairPatch = {
+      sourceFileName: 'source.fit',
+      createdAt: '2024-01-03T00:00:00.000Z',
+      algorithm: 'gps_map_match',
+      originalSummary: { totalDistanceM: 100, elapsedTimeS: 2 },
+      repairedSummary: { totalDistanceM: 100, elapsedTimeS: 2 },
+      recordPatches: [],
+      positionPatches: [0, 1, 2].map((recordIndex) => ({
+        recordIndex,
+        latitude: 50.45 + recordIndex * 0.0001,
+        longitude: 30.52 + recordIndex * 0.0001,
+      })),
+      assumptions: [],
+      warnings: [],
+    };
+    const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+    const exported = encodeRepairedFit(buffer, patch);
+    const decoder = new Decoder(
+      Stream.fromArrayBuffer(
+        exported.bytes.buffer.slice(
+          exported.bytes.byteOffset,
+          exported.bytes.byteOffset + exported.bytes.byteLength,
+        ),
+      ),
+    );
+    expect(decoder.checkIntegrity()).toBe(true);
+    const decoded = decoder.read();
+    const firstRecord = decoded.messages.recordMesgs?.[0];
+    const latitude = firstRecord?.positionLat ?? Number.NaN;
+    const longitude = firstRecord?.positionLong ?? Number.NaN;
+
+    expect((latitude * 180) / 2 ** 31).toBeCloseTo(50.45, 4);
+    expect((longitude * 180) / 2 ** 31).toBeCloseTo(30.52, 4);
+    expect(firstRecord?.heartRate).toBe(140);
+    expect(exported.report.positionPatchedRecords).toBe(3);
+  });
 });
