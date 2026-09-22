@@ -36,7 +36,7 @@ export function estimateSteps(activity: NormalizedActivity): {
 } {
   const interpretation = interpretCadence(
     activity.sport,
-    activity.records.flatMap((record) => record.cadenceRaw == null ? [] : [record.cadenceRaw]),
+    activity.records.flatMap((record) => (record.cadenceRaw == null ? [] : [record.cadenceRaw])),
   );
   let integratedSteps = 0;
   for (let index = 1; index < activity.records.length; index += 1) {
@@ -44,14 +44,21 @@ export function estimateSteps(activity: NormalizedActivity): {
     const dt = secondsBetween(record.timestamp, activity.records[index - 1].timestamp);
     const cadence = recordCadenceSpm(record, interpretation.multiplier);
     if (dt != null && dt > 0 && dt <= 3 && cadence != null) {
-      integratedSteps += cadence * dt / 60;
+      integratedSteps += (cadence * dt) / 60;
     }
   }
-  const sessionSteps = activity.session?.totalStrides && interpretation.multiplier === 2
-    ? activity.session.totalStrides * 2
-    : undefined;
-  const totalSteps = sessionSteps && Math.abs(sessionSteps - integratedSteps) / sessionSteps < 0.1
-    ? sessionSteps
-    : integratedSteps;
-  return { totalSteps, integratedSteps, multiplier: interpretation.multiplier, reason: interpretation.reason };
+  const sessionSteps =
+    activity.session?.totalStrides && interpretation.multiplier === 2
+      ? activity.session.totalStrides * 2
+      : undefined;
+  const totalSteps =
+    sessionSteps && Math.abs(sessionSteps - integratedSteps) / sessionSteps < 0.1
+      ? sessionSteps
+      : integratedSteps;
+  return {
+    totalSteps,
+    integratedSteps,
+    multiplier: interpretation.multiplier,
+    reason: interpretation.reason,
+  };
 }

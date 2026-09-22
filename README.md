@@ -14,7 +14,7 @@
 
 ## Install and run
 
-The checked-in toolchain works with Node.js 16.20 or newer. A current LTS Node release is recommended.
+The checked-in toolchain requires Node.js 20.19 or newer. The repository includes an `.nvmrc` file for compatible version managers.
 
 ```bash
 npm install
@@ -23,12 +23,24 @@ npm run dev
 
 Open the local URL printed by Vite, usually `http://localhost:5173`.
 
-## Build and test
+## Code quality, build, and test
+
+Run the complete local quality gate—the same checks used by GitHub Actions—with:
 
 ```bash
-npm run build
-npm test
+npm run check
 ```
+
+Individual commands are also available:
+
+```bash
+npm run format:check
+npm run lint
+npm test
+npm run build
+```
+
+Use `npm run format` and `npm run lint:fix` to apply automatic fixes.
 
 The supplied damaged FIT file can be exercised locally without copying it into the repository:
 
@@ -68,14 +80,16 @@ Before repair begins, 3R validates that the normalized FIT sport is `running` an
 
 ```text
 src/
-  app/                  application state and worker orchestration
-  components/           upload, attachments, data views, issues, repair UI
+  app/                  top-level application composition
+  components/           layout, upload, data views, issues, and repair UI
+  contexts/             shared UI services such as toast notifications
   fit/
     parser/              official SDK adapter, decoder, Web Worker
     encoder/             preserved-message FIT re-encoding and validation
     normalization/       raw-to-normalized conversion and developer fields
     analysis/            summaries and anomaly evidence
     repair/              pure candidate and patch functions
+  hooks/                 attachment, worker, repair, and export orchestration
   models/                FIT and repair types plus Zod schemas
   utils/                 safe JSON, clipboard, and downloads
   tests/                 unit, acceptance, and browser-flow tests
@@ -93,7 +107,7 @@ Large raw-message and record views are virtualized with `react-window`. Complete
 
 ## Installed dependencies
 
-Runtime: React 18, the Garmin FIT SDK, React Dropzone, UIW React JSON View, React Window, Zod, and Lucide React. Development: TypeScript, Vite, Vitest, jsdom, and Testing Library.
+Runtime: React 18, the Garmin FIT SDK, React Dropzone, UIW React JSON View, React Window, Zod, and Lucide React. Development: TypeScript, Vite, Vitest, jsdom, Testing Library, ESLint with an Airbnb-derived TypeScript/React ruleset, and Prettier.
 
 Exact resolved versions are recorded in `package-lock.json` and can be inspected with `npm ls --depth=0`.
 

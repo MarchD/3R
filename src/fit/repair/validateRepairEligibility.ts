@@ -1,10 +1,8 @@
 import type { NormalizedActivity } from '../../models/fit';
 
-export interface RepairEligibility {
-  eligible: boolean;
-  detectedSport: string;
-  reason?: string;
-}
+export type RepairEligibility =
+  | { eligible: true; detectedSport: string }
+  | { eligible: false; detectedSport: string; reason: string };
 
 export function validateRepairEligibility(activity: NormalizedActivity): RepairEligibility {
   const detectedSport = activity.sport?.trim().toLocaleLowerCase() || 'unknown';

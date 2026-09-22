@@ -1,6 +1,7 @@
 import type { NormalizedActivity } from '../../models/fit';
 import type { RepairCandidate, RecordPatch } from '../../models/repair';
 import { paceFor } from '../analysis/activitySummary';
+import { speedIntegrationConfidence } from './confidence';
 import { secondsBetween } from './estimateSteps';
 import { median } from './medianStepLength';
 
@@ -10,13 +11,17 @@ export const LOCAL_WINDOW_RECORDS = 60;
 
 export const clampDt = (seconds: number): number => Math.max(0, Math.min(3, seconds));
 
-export function localMedianReplacement(speeds: (number | undefined)[], index: number): number | undefined {
+export function localMedianReplacement(
+  speeds: (number | undefined)[],
+  index: number,
+): number | undefined {
   const candidates: number[] = [];
   const start = Math.max(0, index - LOCAL_WINDOW_RECORDS);
   const end = Math.min(speeds.length - 1, index + LOCAL_WINDOW_RECORDS);
   for (let cursor = start; cursor <= end; cursor += 1) {
     const speed = speeds[cursor];
-    if (speed != null && speed >= MIN_LOCAL_SPEED_MPS && speed <= SPEED_CAP_MPS) candidates.push(speed);
+    if (speed != null && speed >= MIN_LOCAL_SPEED_MPS && speed <= SPEED_CAP_MPS)
+      candidates.push(speed);
   }
   return median(candidates);
 }
@@ -37,7 +42,10 @@ export function cleanedSpeedIntegrationCandidate(activity: NormalizedActivity): 
     } else {
       accepted += 1;
     }
-    const rawDt = secondsBetween(activity.records[index].timestamp, activity.records[index - 1].timestamp);
+    const rawDt = secondsBetween(
+      activity.records[index].timestamp,
+      activity.records[index - 1].timestamp,
+    );
     const dt = rawDt == null ? 0 : clampDt(rawDt);
     if (speed != null) distanceM += speed * dt;
     patches.push({ recordIndex: index, distanceM, derivedSpeedMps: speed });
@@ -49,7 +57,7 @@ export function cleanedSpeedIntegrationCandidate(activity: NormalizedActivity): 
     description: 'Replaces invalid speeds with a local median and integrates the cleaned timeline.',
     distanceM,
     averagePaceSPerKm: paceFor(distanceM, activity.session?.totalElapsedTimeS),
-    confidence: unresolved === 0 && accepted >= 100 ? 'high' : unresolved < 10 ? 'medium' : 'low',
+    confidence: speedIntegrationConfidence(accepted, unresolved),
     assumptions: ['Speed is plausible from 0 to 6 m/s.', 'Time deltas are clamped to 0–3 seconds.'],
     warnings: unresolved ? [`${unresolved} segments could not be resolved.`] : [],
     calculation: {

@@ -22,7 +22,10 @@ export function decodeFit(buffer: ArrayBuffer): DecodedFit {
     convertDateTimesToDates: true,
     convertTypesToStrings: true,
     fieldDescriptionListener: (key, developerDataId, description) => {
-      const data = toJsonCompatible({ ...developerDataId, ...description }) as Record<string, unknown>;
+      const data = toJsonCompatible({ ...developerDataId, ...description }) as Record<
+        string,
+        unknown
+      >;
       developerFields.push({ key, ...data });
     },
     mesgListener: (messageNumber, message) => {

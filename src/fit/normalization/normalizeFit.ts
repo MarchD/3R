@@ -1,8 +1,13 @@
-import type { DeveloperFieldDefinition, NormalizedActivity, NormalizedLap, NormalizedRecord } from '../../models/fit';
+import type {
+  DeveloperFieldDefinition,
+  NormalizedActivity,
+  NormalizedLap,
+  NormalizedRecord,
+} from '../../models/fit';
 import { interpretCadence } from '../repair/estimateSteps';
 import { normalizeDeveloperFields } from './normalizeDeveloperFields';
 
-export const semicirclesToDegrees = (semicircles: number): number => semicircles * 180 / 2 ** 31;
+export const semicirclesToDegrees = (semicircles: number): number => (semicircles * 180) / 2 ** 31;
 
 function number(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -28,7 +33,9 @@ export function normalizeFit(
   const rawRecords = (messages.recordMesgs ?? []) as Record<string, unknown>[];
   const cadence = interpretCadence(
     text(session.sport),
-    rawRecords.flatMap((record) => number(record.cadence) == null ? [] : [number(record.cadence)!]),
+    rawRecords.flatMap((record) =>
+      number(record.cadence) == null ? [] : [number(record.cadence)!],
+    ),
   );
   const records: NormalizedRecord[] = rawRecords.map((record, index) => {
     const latitude = number(record.positionLat);
@@ -39,10 +46,13 @@ export function normalizeFit(
     return {
       index,
       timestamp: text(record.timestamp),
-      position: latitude != null || longitude != null ? {
-        latitude: latitude == null ? undefined : semicirclesToDegrees(latitude),
-        longitude: longitude == null ? undefined : semicirclesToDegrees(longitude),
-      } : undefined,
+      position:
+        latitude != null || longitude != null
+          ? {
+              latitude: latitude == null ? undefined : semicirclesToDegrees(latitude),
+              longitude: longitude == null ? undefined : semicirclesToDegrees(longitude),
+            }
+          : undefined,
       distanceM: number(record.distance),
       speedMps: number(record.speed),
       enhancedSpeedMps: number(record.enhancedSpeed),
@@ -50,22 +60,28 @@ export function normalizeFit(
       enhancedAltitudeM: number(record.enhancedAltitude),
       heartRate: number(record.heartRate),
       cadenceRaw,
-      runningCadenceSpm: cadenceRaw == null ? undefined : cadenceRaw * cadence.multiplier + fractional * cadence.multiplier,
+      runningCadenceSpm:
+        cadenceRaw == null
+          ? undefined
+          : cadenceRaw * cadence.multiplier + fractional * cadence.multiplier,
       powerW: number(record.power),
       headingDeg: number(record.heading),
       trackDeg: number(record.track),
       gpsAccuracy: number(record.gpsAccuracy),
-      nativeStepLengthM: number(record.stepLength) == null ? undefined : number(record.stepLength)! / 1000,
+      nativeStepLengthM:
+        number(record.stepLength) == null ? undefined : number(record.stepLength)! / 1000,
       developerFields,
     };
   });
-  const laps: NormalizedLap[] = ((messages.lapMesgs ?? []) as Record<string, unknown>[]).map((lap, index) => ({
-    index,
-    startTime: text(lap.startTime),
-    totalElapsedTimeS: number(lap.totalElapsedTime),
-    totalTimerTimeS: number(lap.totalTimerTime),
-    totalDistanceM: number(lap.totalDistance),
-  }));
+  const laps: NormalizedLap[] = ((messages.lapMesgs ?? []) as Record<string, unknown>[]).map(
+    (lap, index) => ({
+      index,
+      startTime: text(lap.startTime),
+      totalElapsedTimeS: number(lap.totalElapsedTime),
+      totalTimerTimeS: number(lap.totalTimerTime),
+      totalDistanceM: number(lap.totalDistance),
+    }),
+  );
   return {
     metadata: {
       manufacturer: text(fileId.manufacturer),
@@ -75,19 +91,21 @@ export function normalizeFit(
     },
     sport: text(session.sport),
     subSport: text(session.subSport),
-    session: Object.keys(session).length ? {
-      startTime: text(session.startTime),
-      totalElapsedTimeS: number(session.totalElapsedTime),
-      totalTimerTimeS: number(session.totalTimerTime),
-      totalDistanceM: number(session.totalDistance),
-      avgSpeedMps: number(session.enhancedAvgSpeed ?? session.avgSpeed),
-      maxSpeedMps: number(session.enhancedMaxSpeed ?? session.maxSpeed),
-      avgHeartRate: number(session.avgHeartRate),
-      maxHeartRate: number(session.maxHeartRate),
-      totalAscentM: number(session.totalAscent),
-      totalDescentM: number(session.totalDescent),
-      totalStrides: number(session.totalStrides ?? session.totalCycles),
-    } : undefined,
+    session: Object.keys(session).length
+      ? {
+          startTime: text(session.startTime),
+          totalElapsedTimeS: number(session.totalElapsedTime),
+          totalTimerTimeS: number(session.totalTimerTime),
+          totalDistanceM: number(session.totalDistance),
+          avgSpeedMps: number(session.enhancedAvgSpeed ?? session.avgSpeed),
+          maxSpeedMps: number(session.enhancedMaxSpeed ?? session.maxSpeed),
+          avgHeartRate: number(session.avgHeartRate),
+          maxHeartRate: number(session.maxHeartRate),
+          totalAscentM: number(session.totalAscent),
+          totalDescentM: number(session.totalDescent),
+          totalStrides: number(session.totalStrides ?? session.totalCycles),
+        }
+      : undefined,
     laps,
     records,
     developerFields: {

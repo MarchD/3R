@@ -14,7 +14,8 @@ export function FileDropzone({ onFiles, onRejected }: Props) {
     multiple: true,
     onDropAccepted: onFiles,
     onDropRejected: () => onRejected(t('drop.rejected')),
-    validator: (file) => file.size === 0 ? { code: 'empty-file', message: 'The file is empty.' } : null,
+    validator: (file) =>
+      file.size === 0 ? { code: 'empty-file', message: 'The file is empty.' } : null,
   });
   return (
     <div {...getRootProps({ className: `dropzone ${isDragActive ? 'dropzoneActive' : ''}` })}>
@@ -24,7 +25,9 @@ export function FileDropzone({ onFiles, onRejected }: Props) {
         <strong>{isDragActive ? t('drop.active') : t('drop.title')}</strong>
         <span>{t('drop.body')}</span>
       </div>
-      <button type="button" className="button secondary" tabIndex={-1}>{t('drop.choose')}</button>
+      <button type="button" className="button secondary" tabIndex={-1}>
+        {t('drop.choose')}
+      </button>
     </div>
   );
 }

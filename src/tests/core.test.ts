@@ -2,9 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { detectAnomalies } from '../fit/analysis/detectAnomalies';
 import { semicirclesToDegrees } from '../fit/normalization/normalizeFit';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
-import { clampDt, cleanedSpeedIntegrationCandidate, localMedianReplacement } from '../fit/repair/cleanedSpeedIntegration';
+import {
+  clampDt,
+  cleanedSpeedIntegrationCandidate,
+  localMedianReplacement,
+} from '../fit/repair/cleanedSpeedIntegration';
 import { estimateSteps, interpretCadence } from '../fit/repair/estimateSteps';
-import { isPlausibleStepLength, median, medianStepLengthCandidate } from '../fit/repair/medianStepLength';
+import {
+  isPlausibleStepLength,
+  median,
+  medianStepLengthCandidate,
+} from '../fit/repair/medianStepLength';
 import { weightedMean } from '../fit/repair/weightedStepLength';
 import { validateRepairEligibility } from '../fit/repair/validateRepairEligibility';
 import { safeStringify, toJsonCompatible } from '../utils/json';
@@ -17,7 +25,11 @@ describe('normalization and serialization', () => {
   });
 
   it('serializes dates, bigint, typed arrays and circular references', () => {
-    const value: Record<string, unknown> = { date: new Date('2024-01-01T00:00:00Z'), big: 10n, bytes: new Uint8Array([1, 2]) };
+    const value: Record<string, unknown> = {
+      date: new Date('2024-01-01T00:00:00Z'),
+      big: 10n,
+      bytes: new Uint8Array([1, 2]),
+    };
     value.self = value;
     const serialized = safeStringify(value);
     expect(serialized).toContain('2024-01-01T00:00:00.000Z');
@@ -36,7 +48,12 @@ describe('step calculations', () => {
 
   it('calculates median and weighted means and filters implausible lengths', () => {
     expect(median([4, 1, 3, 2])).toBe(2.5);
-    expect(weightedMean([{ value: 1, weight: 1 }, { value: 2, weight: 3 }])).toBe(1.75);
+    expect(
+      weightedMean([
+        { value: 1, weight: 1 },
+        { value: 2, weight: 3 },
+      ]),
+    ).toBe(1.75);
     expect(isPlausibleStepLength(0.6)).toBe(true);
     expect(isPlausibleStepLength(1.61)).toBe(false);
   });
@@ -44,7 +61,10 @@ describe('step calculations', () => {
 
 describe('repair eligibility', () => {
   it('accepts running activities and rejects unsupported sports with a reason', () => {
-    expect(validateRepairEligibility(activityFixture())).toEqual({ eligible: true, detectedSport: 'running' });
+    expect(validateRepairEligibility(activityFixture())).toEqual({
+      eligible: true,
+      detectedSport: 'running',
+    });
     const cycling = activityFixture();
     cycling.sport = 'cycling';
     expect(validateRepairEligibility(cycling)).toMatchObject({
@@ -77,7 +97,12 @@ describe('repair patching', () => {
     const original = activityFixture();
     const snapshot = JSON.parse(JSON.stringify(original));
     const candidate = medianStepLengthCandidate(original);
-    const { patch, repairedActivity } = applyRepairPatch('test.fit', original, candidate, '2024-01-01T00:00:00Z');
+    const { patch, repairedActivity } = applyRepairPatch(
+      'test.fit',
+      original,
+      candidate,
+      '2024-01-01T00:00:00Z',
+    );
     expect(original).toEqual(snapshot);
     expect(repairedActivity).not.toBe(original);
     expect(patch.recordPatches).toHaveLength(original.records.length);

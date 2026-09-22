@@ -67,4 +67,9 @@ export type RepairState =
   | { status: 'calculating' }
   | { status: 'ready'; candidates: RepairCandidate[]; selectedCandidateId?: string }
   | { status: 'previewing'; candidates: RepairCandidate[]; selectedCandidateId: string }
-  | { status: 'applied'; patch: RepairPatch; repairedActivity: RepairedActivity; candidates: RepairCandidate[] };
+  | {
+      status: 'applied';
+      patch: RepairPatch;
+      repairedActivity: RepairedActivity;
+      candidates: RepairCandidate[];
+    };

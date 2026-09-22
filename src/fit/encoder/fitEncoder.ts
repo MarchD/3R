@@ -23,7 +23,10 @@ export interface FitExportReport {
   warnings: string[];
 }
 
-function addUnknownProfileFields(definition: MesgDefinition, unknownMessageNumbers: Set<number>): void {
+function addUnknownProfileFields(
+  definition: MesgDefinition,
+  unknownMessageNumbers: Set<number>,
+): void {
   const messageNumber = definition.globalMessageNumber;
   const profiles = Profile.messages as Record<number, ProfileMesg>;
   let messageProfile = profiles[messageNumber];
@@ -64,7 +67,12 @@ function dateMs(value: unknown): number | undefined {
   return undefined;
 }
 
-function patchSummarySpeed(message: MutableMesg, distanceM: number, timerTimeS: unknown, maxSpeedMps: number): void {
+function patchSummarySpeed(
+  message: MutableMesg,
+  distanceM: number,
+  timerTimeS: unknown,
+  maxSpeedMps: number,
+): void {
   const timer = typeof timerTimeS === 'number' ? timerTimeS : undefined;
   const average = timer && timer > 0 ? distanceM / timer : undefined;
   message.totalDistance = distanceM;
@@ -76,7 +84,10 @@ function patchSummarySpeed(message: MutableMesg, distanceM: number, timerTimeS: 
   message.enhancedMaxSpeed = maxSpeedMps;
 }
 
-export function encodeRepairedFit(source: ArrayBuffer, patch: RepairPatch): {
+export function encodeRepairedFit(
+  source: ArrayBuffer,
+  patch: RepairPatch,
+): {
   bytes: Uint8Array;
   report: FitExportReport;
 } {
@@ -104,7 +115,9 @@ export function encodeRepairedFit(source: ArrayBuffer, patch: RepairPatch): {
     },
   });
   if (decoded.errors.length) {
-    throw new Error(`The source decoder reported ${decoded.errors.length} error(s); FIT export was stopped to avoid producing an incomplete activity.`);
+    throw new Error(
+      `The source decoder reported ${decoded.errors.length} error(s); FIT export was stopped to avoid producing an incomplete activity.`,
+    );
   }
 
   const patches = new Map(patch.recordPatches.map((item) => [item.recordIndex, item]));
@@ -127,15 +140,25 @@ export function encodeRepairedFit(source: ArrayBuffer, patch: RepairPatch): {
     recordIndex += 1;
   }
   if (recordIndex !== patch.recordPatches.length) {
-    throw new Error(`Record count changed since repair (${recordIndex} source records, ${patch.recordPatches.length} patched records).`);
+    throw new Error(
+      `Record count changed since repair (${recordIndex} source records, ${patch.recordPatches.length} patched records).`,
+    );
   }
 
-  const maxSpeedMps = patchedRecords.reduce((maximum, record) => Math.max(maximum, record.speedMps), 0);
+  const maxSpeedMps = patchedRecords.reduce(
+    (maximum, record) => Math.max(maximum, record.speedMps),
+    0,
+  );
   let sessionIndex = 0;
   for (const item of allMessages) {
     if (item.messageNumber === Profile.MesgNum.SESSION) {
       if (sessionIndex === 0 && patch.repairedSummary.totalDistanceM != null) {
-        patchSummarySpeed(item.message, patch.repairedSummary.totalDistanceM, item.message.totalTimerTime, maxSpeedMps);
+        patchSummarySpeed(
+          item.message,
+          patch.repairedSummary.totalDistanceM,
+          item.message.totalTimerTime,
+          maxSpeedMps,
+        );
       }
       sessionIndex += 1;
     }
@@ -143,13 +166,20 @@ export function encodeRepairedFit(source: ArrayBuffer, patch: RepairPatch): {
       const start = dateMs(item.message.startTime);
       const end = dateMs(item.message.timestamp);
       if (start == null || end == null) continue;
-      const beforeStart = [...patchedRecords].reverse().find((record) => record.timestamp != null && record.timestamp <= start);
-      const lapRecords = patchedRecords.filter((record) => record.timestamp != null && record.timestamp > start && record.timestamp <= end);
+      const beforeStart = [...patchedRecords]
+        .reverse()
+        .find((record) => record.timestamp != null && record.timestamp <= start);
+      const lapRecords = patchedRecords.filter(
+        (record) => record.timestamp != null && record.timestamp > start && record.timestamp <= end,
+      );
       const last = lapRecords.at(-1);
       if (!last) continue;
       const startDistance = beforeStart?.distanceM ?? lapRecords[0].distanceM;
       const lapDistance = Math.max(0, last.distanceM - startDistance);
-      const lapMaxSpeed = lapRecords.reduce((maximum, record) => Math.max(maximum, record.speedMps), 0);
+      const lapMaxSpeed = lapRecords.reduce(
+        (maximum, record) => Math.max(maximum, record.speedMps),
+        0,
+      );
       patchSummarySpeed(item.message, lapDistance, item.message.totalTimerTime, lapMaxSpeed);
     }
   }
@@ -159,17 +189,27 @@ export function encodeRepairedFit(source: ArrayBuffer, patch: RepairPatch): {
   allMessages.forEach(({ messageNumber, message }) => encoder.onMesg(messageNumber, message));
   const bytes = encoder.close();
 
-  const validationDecoder = new Decoder(Stream.fromArrayBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)));
-  if (!validationDecoder.checkIntegrity()) throw new Error('The encoded FIT file failed CRC validation.');
+  const validationDecoder = new Decoder(
+    Stream.fromArrayBuffer(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    ),
+  );
+  if (!validationDecoder.checkIntegrity())
+    throw new Error('The encoded FIT file failed CRC validation.');
   const validation = validationDecoder.read({ includeUnknownData: true });
-  if (validation.errors.length) throw new Error('The encoded FIT file could not be decoded cleanly.');
+  if (validation.errors.length)
+    throw new Error('The encoded FIT file could not be decoded cleanly.');
   const validationRecords = validation.messages.recordMesgs ?? [];
   const validationDistance = validation.messages.sessionMesgs?.[0]?.totalDistance;
   const expectedDistance = patch.repairedSummary.totalDistanceM;
   if (validationRecords.length !== patch.recordPatches.length) {
     throw new Error('The encoded FIT file did not preserve every record.');
   }
-  if (expectedDistance != null && (typeof validationDistance !== 'number' || Math.abs(validationDistance - expectedDistance) > 0.1)) {
+  if (
+    expectedDistance != null &&
+    (typeof validationDistance !== 'number' ||
+      Math.abs(validationDistance - expectedDistance) > 0.1)
+  ) {
     throw new Error('The encoded FIT file did not preserve the repaired session distance.');
   }
 
@@ -182,7 +222,9 @@ export function encodeRepairedFit(source: ArrayBuffer, patch: RepairPatch): {
       unknownMessageTypes: unknownMessageNumbers.size,
       outputBytes: bytes.byteLength,
       warnings: unknownMessageNumbers.size
-        ? [`${unknownMessageNumbers.size} unknown message type(s) were preserved using their original field definitions.`]
+        ? [
+            `${unknownMessageNumbers.size} unknown message type(s) were preserved using their original field definitions.`,
+          ]
         : [],
     },
   };

@@ -22,13 +22,59 @@ export function JsonViewer({ value, filename, label, onCopied }: Props) {
   return (
     <section className="jsonPanel">
       <div className="toolbar">
-        <label className="search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('json.search')} /></label>
-        <label className="depthControl">{t('json.depth')} <select value={depth} onChange={(event) => setDepth(Number(event.target.value))}><option value={1}>1</option><option value={2}>2</option><option value={3}>3</option><option value={4}>4</option></select></label>
-        <button className="button secondary" aria-label={t('json.copyLabel', { label })} onClick={() => copyJson(compatible).then(onCopied)}><Copy size={15} /> {t('json.copy')}</button>
-        <button className="button secondary" onClick={() => downloadJson(filename, compatible)}><Download size={15} /> {t('json.download')}</button>
+        <div className="search">
+          <Search size={16} />
+          <input
+            id="json-search"
+            aria-label={t('json.search')}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('json.search')}
+          />
+        </div>
+        <label className="depthControl" htmlFor="json-depth">
+          {t('json.depth')}{' '}
+          <select
+            id="json-depth"
+            value={depth}
+            onChange={(event) => setDepth(Number(event.target.value))}
+          >
+            <option value={1}>1</option>
+            <option value={2}>2</option>
+            <option value={3}>3</option>
+            <option value={4}>4</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className="button secondary"
+          aria-label={t('json.copyLabel', { label })}
+          onClick={() => copyJson(compatible).then(onCopied)}
+        >
+          <Copy size={15} /> {t('json.copy')}
+        </button>
+        <button
+          type="button"
+          className="button secondary"
+          onClick={() => downloadJson(filename, compatible)}
+        >
+          <Download size={15} /> {t('json.download')}
+        </button>
       </div>
-      {query && <p className={`searchStatus ${matched ? '' : 'noMatch'}`}><Check size={14} /> {matched ? t('json.match') : t('json.noMatch')}</p>}
-      <div className="jsonTree"><JsonView value={compatible} collapsed={depth} displayDataTypes={false} enableClipboard onCopied={onCopied} /></div>
+      {query && (
+        <p className={`searchStatus ${matched ? '' : 'noMatch'}`}>
+          <Check size={14} /> {matched ? t('json.match') : t('json.noMatch')}
+        </p>
+      )}
+      <div className="jsonTree">
+        <JsonView
+          value={compatible}
+          collapsed={depth}
+          displayDataTypes={false}
+          enableClipboard
+          onCopied={onCopied}
+        />
+      </div>
     </section>
   );
 }

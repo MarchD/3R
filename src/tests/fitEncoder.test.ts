@@ -7,13 +7,20 @@ function sourceFit(): Uint8Array {
   const encoder = new Encoder();
   const start = new Date('2024-01-01T00:00:00.000Z');
   const end = new Date('2024-01-01T00:00:02.000Z');
-  encoder.onMesg(Profile.MesgNum.FILE_ID, { type: 'activity', manufacturer: 'development', product: 1, timeCreated: start });
-  [0, 1, 2].forEach((second) => encoder.onMesg(Profile.MesgNum.RECORD, {
-    timestamp: new Date(start.getTime() + second * 1000),
-    distance: second * 3,
-    enhancedSpeed: 3,
-    heartRate: 140 + second,
-  }));
+  encoder.onMesg(Profile.MesgNum.FILE_ID, {
+    type: 'activity',
+    manufacturer: 'development',
+    product: 1,
+    timeCreated: start,
+  });
+  [0, 1, 2].forEach((second) =>
+    encoder.onMesg(Profile.MesgNum.RECORD, {
+      timestamp: new Date(start.getTime() + second * 1000),
+      distance: second * 3,
+      enhancedSpeed: 3,
+      heartRate: 140 + second,
+    }),
+  );
   encoder.onMesg(Profile.MesgNum.LAP, {
     messageIndex: 0,
     timestamp: end,
@@ -33,7 +40,12 @@ function sourceFit(): Uint8Array {
     firstLapIndex: 0,
     numLaps: 1,
   });
-  encoder.onMesg(Profile.MesgNum.ACTIVITY, { timestamp: end, totalTimerTime: 2, numSessions: 1, type: 'manual' });
+  encoder.onMesg(Profile.MesgNum.ACTIVITY, {
+    timestamp: end,
+    totalTimerTime: 2,
+    numSessions: 1,
+    type: 'manual',
+  });
   return encoder.close();
 }
 
@@ -56,7 +68,14 @@ describe('FIT export', () => {
     };
     const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
     const exported = encodeRepairedFit(buffer, patch);
-    const decoder = new Decoder(Stream.fromArrayBuffer(exported.bytes.buffer.slice(exported.bytes.byteOffset, exported.bytes.byteOffset + exported.bytes.byteLength)));
+    const decoder = new Decoder(
+      Stream.fromArrayBuffer(
+        exported.bytes.buffer.slice(
+          exported.bytes.byteOffset,
+          exported.bytes.byteOffset + exported.bytes.byteLength,
+        ),
+      ),
+    );
     expect(decoder.checkIntegrity()).toBe(true);
     const decoded = decoder.read();
     expect(decoded.errors).toEqual([]);

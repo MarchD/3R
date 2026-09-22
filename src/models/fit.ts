@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue =
+  | null
+  | boolean
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 
 export interface FitWarning {
   code: string;
@@ -32,7 +38,9 @@ export interface DeveloperFieldDefinition {
 export const normalizedRecordSchema = z.object({
   index: z.number().int().nonnegative(),
   timestamp: z.string().optional(),
-  position: z.object({ latitude: z.number().optional(), longitude: z.number().optional() }).optional(),
+  position: z
+    .object({ latitude: z.number().optional(), longitude: z.number().optional() })
+    .optional(),
   distanceM: z.number().optional(),
   speedMps: z.number().optional(),
   enhancedSpeedMps: z.number().optional(),

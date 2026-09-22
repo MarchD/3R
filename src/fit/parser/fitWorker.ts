@@ -6,7 +6,12 @@ import type { NormalizedActivity } from '../../models/fit';
 import type { RepairPatch } from '../../models/repair';
 
 type WorkerRequest =
-  | { id: string; type: 'parse'; buffer: ArrayBuffer; file: { name: string; size: number; lastModified: number } }
+  | {
+      id: string;
+      type: 'parse';
+      buffer: ArrayBuffer;
+      file: { name: string; size: number; lastModified: number };
+    }
   | { id: string; type: 'repair'; activity: NormalizedActivity }
   | { id: string; type: 'export-fit'; buffer: ArrayBuffer; patch: RepairPatch };
 
@@ -27,7 +32,11 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     }
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : 'The FIT file could not be processed.';
-    self.postMessage({ id: request.id, type: 'error', error: { code: 'processing_failed', message } });
+    self.postMessage({
+      id: request.id,
+      type: 'error',
+      error: { code: 'processing_failed', message },
+    });
   }
 };
 

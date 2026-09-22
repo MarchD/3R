@@ -4,7 +4,10 @@ function normalize(value: unknown, seen: WeakSet<object>): unknown {
   if (typeof value === 'bigint') return value.toString();
   if (value instanceof Date) return value.toISOString();
   if (ArrayBuffer.isView(value)) {
-    return { [BINARY_TAG]: value.constructor.name, values: Array.from(value as unknown as ArrayLike<number>) };
+    return {
+      [BINARY_TAG]: value.constructor.name,
+      values: Array.from(value as unknown as ArrayLike<number>),
+    };
   }
   if (value instanceof ArrayBuffer) {
     return { [BINARY_TAG]: 'ArrayBuffer', values: Array.from(new Uint8Array(value)) };

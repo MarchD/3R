@@ -16,9 +16,39 @@ export function GarminWorkflowGuide() {
         <span>{t('guide.badge')}</span>
       </div>
       <ol className="guideSteps">
-        <li><span><Download size={18} /></span><div><strong>{t('guide.downloadTitle')}</strong><p>{t('guide.downloadBody')}</p><a href={EXPORT_FAQ} target="_blank" rel="noreferrer">{t('guide.exportLink')} <ExternalLink size={13} /></a></div></li>
-        <li><span><Wrench size={18} /></span><div><strong>{t('guide.repairTitle')}</strong><p>{t('guide.repairBody')}</p></div></li>
-        <li><span><Upload size={18} /></span><div><strong>{t('guide.uploadTitle')}</strong><p>{t('guide.uploadBody')}</p><a href={IMPORT_FAQ} target="_blank" rel="noreferrer">{t('guide.importLink')} <ExternalLink size={13} /></a></div></li>
+        <li>
+          <span>
+            <Download size={18} />
+          </span>
+          <div>
+            <strong>{t('guide.downloadTitle')}</strong>
+            <p>{t('guide.downloadBody')}</p>
+            <a href={EXPORT_FAQ} target="_blank" rel="noreferrer">
+              {t('guide.exportLink')} <ExternalLink size={13} />
+            </a>
+          </div>
+        </li>
+        <li>
+          <span>
+            <Wrench size={18} />
+          </span>
+          <div>
+            <strong>{t('guide.repairTitle')}</strong>
+            <p>{t('guide.repairBody')}</p>
+          </div>
+        </li>
+        <li>
+          <span>
+            <Upload size={18} />
+          </span>
+          <div>
+            <strong>{t('guide.uploadTitle')}</strong>
+            <p>{t('guide.uploadBody')}</p>
+            <a href={IMPORT_FAQ} target="_blank" rel="noreferrer">
+              {t('guide.importLink')} <ExternalLink size={13} />
+            </a>
+          </div>
+        </li>
       </ol>
     </section>
   );

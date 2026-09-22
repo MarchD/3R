@@ -32,7 +32,17 @@ export function parsedFixture(): ParsedFitFile {
   return {
     file: { name: 'test.fit', size: 10, lastModified: 1 },
     integrity: { crcValid: true, complete: true, warnings: [], errors: [] },
-    raw: { messages: [{ index: 0, messageNumber: 20, messageType: 'record', data: { timestamp: normalized.records[0].timestamp } }], developerFields: [] },
+    raw: {
+      messages: [
+        {
+          index: 0,
+          messageNumber: 20,
+          messageType: 'record',
+          data: { timestamp: normalized.records[0].timestamp },
+        },
+      ],
+      developerFields: [],
+    },
     normalized,
     anomalies: [],
   };

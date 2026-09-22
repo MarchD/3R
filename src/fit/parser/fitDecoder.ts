@@ -19,10 +19,20 @@ export function parseFitBuffer(buffer: ArrayBuffer, file: FileMetadata): ParsedF
     recoverable: true,
   }));
   const warnings = [];
-  if (!decoded.crcValid) warnings.push({ code: 'crc_mismatch', message: 'CRC validation failed. Decoded data may be incomplete.' });
-  if (!normalized.session) warnings.push({ code: 'missing_session', message: 'No session message was decoded.' });
-  if (!normalized.records.length) warnings.push({ code: 'missing_records', message: 'No record messages were decoded.' });
-  if (errors.length) warnings.push({ code: 'partial_decode', message: 'The decoder returned partial data with errors.' });
+  if (!decoded.crcValid)
+    warnings.push({
+      code: 'crc_mismatch',
+      message: 'CRC validation failed. Decoded data may be incomplete.',
+    });
+  if (!normalized.session)
+    warnings.push({ code: 'missing_session', message: 'No session message was decoded.' });
+  if (!normalized.records.length)
+    warnings.push({ code: 'missing_records', message: 'No record messages were decoded.' });
+  if (errors.length)
+    warnings.push({
+      code: 'partial_decode',
+      message: 'The decoder returned partial data with errors.',
+    });
   return {
     file,
     integrity: {
