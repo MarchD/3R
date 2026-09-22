@@ -69,6 +69,7 @@ describe('complete local analysis and repair flow', () => {
   });
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -137,5 +138,15 @@ describe('complete local analysis and repair flow', () => {
     expect(screen.getByText('З Garmin Connect до 3R — і назад')).toBeInTheDocument();
     expect(document.documentElement.lang).toBe('uk');
     expect(localStorage.getItem('3r-language')).toBe('uk');
+  });
+
+  it('uses the browser language when no preference has been saved', () => {
+    vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(['uk-UA', 'en-US']);
+
+    renderApp();
+
+    expect(screen.getByRole('heading', { name: /Перевірте дані/ })).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('uk');
+    expect(localStorage.getItem('3r-language')).toBeNull();
   });
 });

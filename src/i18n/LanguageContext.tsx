@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 export type Language = 'en' | 'uk';
 type Params = Record<string, string | number>;
@@ -333,6 +341,7 @@ const uk: Record<string, string> = {
 };
 
 const dictionaries = { en, uk };
+const LANGUAGE_STORAGE_KEY = '3r-language';
 const LanguageContext = createContext<{
   language: Language;
   setLanguage: (language: Language) => void;
@@ -343,15 +352,42 @@ function format(template: string, params: Params = {}) {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => String(params[key] ?? `{${key}}`));
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() =>
-    localStorage.getItem('3r-language') === 'uk' ? 'uk' : 'en',
+function savedLanguage(): Language | undefined {
+  const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return saved === 'en' || saved === 'uk' ? saved : undefined;
+}
+
+function browserLanguage(): Language {
+  const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language];
+  const supportsUkrainian = browserLanguages.some(
+    (language) => language.toLocaleLowerCase().split('-')[0] === 'uk',
   );
+  return supportsUkrainian ? 'uk' : 'en';
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setActiveLanguage] = useState<Language>(
+    () => savedLanguage() ?? browserLanguage(),
+  );
+
+  const setLanguage = useCallback((nextLanguage: Language) => {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    setActiveLanguage(nextLanguage);
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem('3r-language', language);
     document.documentElement.lang = language;
     document.title = language === 'uk' ? '3R — відновлення FIT' : '3R — FIT repair workbench';
   }, [language]);
+
+  useEffect(() => {
+    const followBrowserLanguage = () => {
+      if (!savedLanguage()) setActiveLanguage(browserLanguage());
+    };
+    window.addEventListener('languagechange', followBrowserLanguage);
+    return () => window.removeEventListener('languagechange', followBrowserLanguage);
+  }, []);
+
   const value = useMemo(
     () => ({
       language,
@@ -359,7 +395,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       t: (key: string, params?: Params) =>
         format(dictionaries[language][key] ?? en[key] ?? key, params),
     }),
-    [language],
+    [language, setLanguage],
   );
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
