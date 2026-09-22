@@ -147,6 +147,21 @@ export function RepairWizard({
             <p>{t('repair.unchanged')}</p>
           </div>
         </div>
+        {state.patch.originalStartTime && state.patch.correctedStartTime && (
+          <div className="timeRepairSummary">
+            <strong>{t('repair.timeChanged')}</strong>
+            <span>
+              {t('repair.timeChange', {
+                before: new Date(state.patch.originalStartTime).toLocaleString(
+                  language === 'uk' ? 'uk-UA' : 'en-US',
+                ),
+                after: new Date(state.patch.correctedStartTime).toLocaleString(
+                  language === 'uk' ? 'uk-UA' : 'en-US',
+                ),
+              })}
+            </span>
+          </div>
+        )}
         <div className="derivedOutputGroup">
           <span>{t('repair.jsonEvidence')}</span>
           <div className="downloadGrid">

@@ -46,6 +46,7 @@ class MockWorker {
             report: {
               messageCount: 8,
               recordCount: 5,
+              shiftedTimestampFields: 0,
               developerFieldCount: 0,
               unknownMessageTypes: 0,
               outputBytes: 3,
@@ -126,6 +127,27 @@ describe('complete local analysis and repair flow', () => {
     expect(screen.getByText(/supports running activities only/i)).toBeInTheDocument();
     expect(screen.getByText('Detected: cycling')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Repair activity' })).not.toBeInTheDocument();
+    expect(repairRequests).toBe(0);
+  });
+
+  it('corrects the start time from one input and leaves distance repair optional', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    const file = new File([new Uint8Array([1, 2, 3])], 'wrong-time.fit', {
+      type: 'application/octet-stream',
+      lastModified: 3,
+    });
+    await user.upload(screen.getByLabelText('Choose FIT files'), file);
+    expect(await screen.findByText('Complete decode')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: /start date or time is wrong/i }));
+    fireEvent.change(screen.getByLabelText('Correct start date and time'), {
+      target: { value: '2024-01-02T03:30' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Apply time correction' }));
+
+    expect(screen.getByText('Activity start corrected')).toBeInTheDocument();
+    expect(screen.getByText('Derived files are ready')).toBeInTheDocument();
     expect(repairRequests).toBe(0);
   });
 

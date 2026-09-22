@@ -1,9 +1,11 @@
 import type { NormalizedActivity } from './fit';
 
-export type RepairAlgorithm =
+export type DistanceRepairAlgorithm =
   | 'steps_median_step_length'
   | 'steps_weighted_mean_step_length'
   | 'cleaned_speed_integration';
+
+export type RepairAlgorithm = DistanceRepairAlgorithm | 'timestamp_shift';
 
 export interface ActivitySummary {
   totalDistanceM?: number;
@@ -30,7 +32,7 @@ export interface RepairCalculation {
 
 export interface RepairCandidate {
   id: string;
-  algorithm: RepairAlgorithm;
+  algorithm: DistanceRepairAlgorithm;
   name: string;
   description: string;
   distanceM: number;
@@ -49,6 +51,9 @@ export interface RepairPatch {
   originalSummary: ActivitySummary;
   repairedSummary: ActivitySummary;
   recordPatches: RecordPatch[];
+  timestampOffsetMs?: number;
+  originalStartTime?: string;
+  correctedStartTime?: string;
   assumptions: string[];
   warnings: string[];
 }
@@ -58,6 +63,9 @@ export interface RepairedActivity extends NormalizedActivity {
     algorithm: RepairAlgorithm;
     createdAt: string;
     originalDistanceM?: number;
+    timestampOffsetMs?: number;
+    originalStartTime?: string;
+    correctedStartTime?: string;
   };
 }
 

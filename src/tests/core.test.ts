@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { detectAnomalies } from '../fit/analysis/detectAnomalies';
 import { semicirclesToDegrees } from '../fit/normalization/normalizeFit';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
+import { applyTimestampRepair } from '../fit/repair/applyTimestampRepair';
 import {
   clampDt,
   cleanedSpeedIntegrationCandidate,
@@ -107,5 +108,24 @@ describe('repair patching', () => {
     expect(repairedActivity).not.toBe(original);
     expect(patch.recordPatches).toHaveLength(original.records.length);
     expect(repairedActivity.session?.totalDistanceM).toBe(candidate.distanceM);
+  });
+
+  it('shifts the complete normalized timeline from one corrected start time', () => {
+    const original = activityFixture();
+    const snapshot = JSON.parse(JSON.stringify(original));
+    const { patch, repairedActivity } = applyTimestampRepair(
+      'test.fit',
+      original,
+      '2024-01-02T03:30:00.000Z',
+      '2024-01-03T00:00:00.000Z',
+    );
+
+    expect(original).toEqual(snapshot);
+    expect(patch.timestampOffsetMs).toBe(99_000_000);
+    expect(repairedActivity.session?.startTime).toBe('2024-01-02T03:30:00.000Z');
+    expect(repairedActivity.records[0].timestamp).toBe('2024-01-02T03:30:00.000Z');
+    expect(repairedActivity.records.at(-1)?.timestamp).toBe('2024-01-02T03:30:04.000Z');
+    expect(repairedActivity.metadata.createdAt).toBe('2024-01-02T03:30:00.000Z');
+    expect(repairedActivity.session?.totalElapsedTimeS).toBe(4);
   });
 });

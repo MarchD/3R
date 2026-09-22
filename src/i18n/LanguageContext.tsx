@@ -111,6 +111,18 @@ const en: Record<string, string> = {
     'Distance repair currently supports running activities only. This file is marked as {sport}.',
   'repair.needsSession': 'Distance repair needs a decoded running session.',
   'repair.needsRecords': 'Distance repair needs at least two running records.',
+  'repair.options': 'Repair options',
+  'repair.optionsBody': 'Choose only the values you know are incorrect.',
+  'repair.startTimeWrong': 'The start date or time is wrong',
+  'repair.startTimeCurrent': 'Current start: {time}',
+  'repair.startTimeMissing': 'No valid session start time was decoded.',
+  'repair.startTimeCorrected': 'Correct start date and time',
+  'repair.startTimeHelp':
+    'Enter one corrected start time. Every related timestamp will move by the same offset; durations and sensor readings stay unchanged.',
+  'repair.timeOffset': 'Timeline offset: {offset}',
+  'repair.applyTime': 'Apply time correction',
+  'repair.timeChanged': 'Activity start corrected',
+  'repair.timeChange': '{before} → {after}',
   'repair.available':
     'Distance repair is available. Analysis above stays unchanged until you explicitly continue.',
   'repair.activity': 'Repair activity',
@@ -128,7 +140,7 @@ const en: Record<string, string> = {
   'repair.device': 'Device-compatible activity',
   'repair.fit': 'Repaired FIT file',
   'repair.fitBody':
-    'Re-encodes preserved messages with the selected distance repair, then validates CRC, record count, and session distance before download.',
+    'Re-encodes preserved messages with the selected repairs, then validates CRC, record count, timestamps, and session distance before download.',
   'repair.validating': 'Validating FIT…',
   'repair.createFit': 'Create repaired FIT',
   'repair.validated':
@@ -276,6 +288,18 @@ const uk: Record<string, string> = {
     'Відновлення дистанції наразі підтримує лише бігові активності. Цей файл позначено як «{sport}».',
   'repair.needsSession': 'Для відновлення дистанції потрібна декодована бігова сесія.',
   'repair.needsRecords': 'Для відновлення дистанції потрібно щонайменше два бігові записи.',
+  'repair.options': 'Параметри відновлення',
+  'repair.optionsBody': 'Виберіть лише ті значення, які точно є неправильними.',
+  'repair.startTimeWrong': 'Дата або час початку неправильні',
+  'repair.startTimeCurrent': 'Поточний початок: {time}',
+  'repair.startTimeMissing': 'Не вдалося декодувати коректний час початку сесії.',
+  'repair.startTimeCorrected': 'Правильна дата й час початку',
+  'repair.startTimeHelp':
+    'Введіть один правильний час початку. Усі пов’язані часові позначки змістяться на однакову величину; тривалість і показники датчиків не зміняться.',
+  'repair.timeOffset': 'Зсув часової шкали: {offset}',
+  'repair.applyTime': 'Застосувати виправлення часу',
+  'repair.timeChanged': 'Час початку активності виправлено',
+  'repair.timeChange': '{before} → {after}',
   'repair.available':
     'Відновлення дистанції доступне. Дані вище не зміняться, доки ви явно не продовжите.',
   'repair.activity': 'Відновити активність',
@@ -293,7 +317,7 @@ const uk: Record<string, string> = {
   'repair.device': 'Активність для пристроїв',
   'repair.fit': 'Відновлений файл FIT',
   'repair.fitBody':
-    'Повторно кодує збережені повідомлення з вибраною дистанцією, а потім перевіряє CRC, кількість записів і дистанцію сесії перед завантаженням.',
+    'Повторно кодує збережені повідомлення з вибраними виправленнями, а потім перевіряє CRC, кількість записів, часові позначки й дистанцію сесії перед завантаженням.',
   'repair.validating': 'Перевірка FIT…',
   'repair.createFit': 'Створити відновлений FIT',
   'repair.validated':

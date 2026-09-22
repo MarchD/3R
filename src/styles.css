@@ -720,6 +720,77 @@ details summary {
   font-size: 11px;
 }
 
+.startTimeRepair {
+  margin: 0 24px 16px;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: white;
+}
+.repairOptionsHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.repairOptionsHeading > svg {
+  margin-top: 2px;
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+.repairOptionsHeading h2 {
+  margin: 0 0 3px;
+  font-size: 17px;
+}
+.repairOptionsHeading p,
+.startTimeEditor p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.repairOption {
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 8px;
+  background: var(--wash);
+  cursor: pointer;
+}
+.repairOption input {
+  margin-top: 3px;
+}
+.repairOption span {
+  display: grid;
+  gap: 3px;
+}
+.repairOption small {
+  color: var(--muted);
+}
+.startTimeEditor {
+  padding-left: 34px;
+  display: grid;
+  justify-items: start;
+  gap: 9px;
+}
+.startTimeEditor > label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.startTimeEditor input {
+  min-width: min(100%, 280px);
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font: inherit;
+}
+.startTimeEditor .timeOffset {
+  color: var(--blue);
+  font-weight: 700;
+}
+
 .repairEntry {
   margin: 0 24px 24px;
   padding: 17px 18px;
@@ -1002,6 +1073,18 @@ details summary {
 .appliedHeading > div {
   display: grid;
   gap: 2px;
+}
+.timeRepairSummary {
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border-radius: 8px;
+  color: var(--green);
+  background: #edf8f4;
+}
+.timeRepairSummary span {
+  color: var(--text);
+  font-size: 13px;
 }
 .derivedOutputGroup {
   padding-top: 14px;

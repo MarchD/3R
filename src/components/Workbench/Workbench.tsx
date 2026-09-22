@@ -10,6 +10,7 @@ import { JsonViewer } from '../JsonViewer/JsonViewer';
 import { RawMessagesView } from '../JsonViewer/RawMessagesView';
 import { RecordsTable } from '../RecordsTable/RecordsTable';
 import { RepairWizard } from '../RepairWizard/RepairWizard';
+import { StartTimeRepair } from '../StartTimeRepair/StartTimeRepair';
 
 export function Workbench({ workbench }: { workbench: FitWorkbenchController }) {
   const { t } = useLanguage();
@@ -17,6 +18,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
   const {
     activeTab,
     applyCandidate,
+    applyStartTime,
     attachments,
     calculateRepairs,
     exportFit,
@@ -125,6 +127,9 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
               ))}
             </nav>
             <div className="tabContent">{content}</div>
+            {repairState.status === 'not-requested' && (
+              <StartTimeRepair result={result} onApply={applyStartTime} />
+            )}
             <RepairWizard
               result={result}
               state={repairState}

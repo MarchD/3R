@@ -85,4 +85,43 @@ describe('FIT export', () => {
     expect(decoded.messages.sessionMesgs?.[0]?.totalDistance).toBeCloseTo(8, 2);
     expect(exported.report.recordCount).toBe(3);
   });
+
+  it('shifts all FIT timestamps while preserving durations and sensor data', () => {
+    const source = sourceFit();
+    const correctedStartTime = '2024-01-02T03:30:00.000Z';
+    const patch: RepairPatch = {
+      sourceFileName: 'source.fit',
+      createdAt: '2024-01-03T00:00:00.000Z',
+      algorithm: 'timestamp_shift',
+      originalSummary: { totalDistanceM: 100, elapsedTimeS: 2 },
+      repairedSummary: { totalDistanceM: 100, elapsedTimeS: 2 },
+      recordPatches: [],
+      timestampOffsetMs: 99_000_000,
+      originalStartTime: '2024-01-01T00:00:00.000Z',
+      correctedStartTime,
+      assumptions: [],
+      warnings: [],
+    };
+    const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+    const exported = encodeRepairedFit(buffer, patch);
+    const decoder = new Decoder(
+      Stream.fromArrayBuffer(
+        exported.bytes.buffer.slice(
+          exported.bytes.byteOffset,
+          exported.bytes.byteOffset + exported.bytes.byteLength,
+        ),
+      ),
+    );
+    expect(decoder.checkIntegrity()).toBe(true);
+    const decoded = decoder.read();
+
+    expect(decoded.messages.sessionMesgs?.[0]?.startTime).toEqual(new Date(correctedStartTime));
+    expect(decoded.messages.recordMesgs?.[0]?.timestamp).toEqual(new Date(correctedStartTime));
+    expect(decoded.messages.recordMesgs?.at(-1)?.timestamp).toEqual(
+      new Date('2024-01-02T03:30:02.000Z'),
+    );
+    expect(decoded.messages.sessionMesgs?.[0]?.totalElapsedTime).toBe(2);
+    expect(decoded.messages.recordMesgs?.[0]?.heartRate).toBe(140);
+    expect(exported.report.shiftedTimestampFields).toBeGreaterThan(0);
+  });
 });
