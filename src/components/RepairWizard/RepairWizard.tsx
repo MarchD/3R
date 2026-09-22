@@ -30,6 +30,7 @@ interface Props {
   onState: (state: RepairState) => void;
   onCalculate: () => void;
   onApply: (candidate: RepairCandidate) => void;
+  correctedStartTime?: string;
   fitExportState: FitExportUiState;
   onExportFit: () => void;
   onCopied: () => void;
@@ -54,6 +55,7 @@ export function RepairWizard({
   onState,
   onCalculate,
   onApply,
+  correctedStartTime,
   fitExportState,
   onExportFit,
   onCopied,
@@ -270,6 +272,19 @@ export function RepairWizard({
             <del>0</del>
             <ins>{selected.recordPatches.length.toLocaleString()}</ins>
           </div>
+          {correctedStartTime && result.normalized.session?.startTime && (
+            <div>
+              <span>{t('repair.timeChanged')}</span>
+              <del>
+                {new Date(result.normalized.session.startTime).toLocaleString(
+                  language === 'uk' ? 'uk-UA' : 'en-US',
+                )}
+              </del>
+              <ins>
+                {new Date(correctedStartTime).toLocaleString(language === 'uk' ? 'uk-UA' : 'en-US')}
+              </ins>
+            </div>
+          )}
         </div>
         <button type="button" className="button primary" onClick={() => onApply(selected)}>
           {t('repair.apply')}

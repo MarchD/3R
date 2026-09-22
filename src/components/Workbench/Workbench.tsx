@@ -18,9 +18,9 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
   const {
     activeTab,
     applyCandidate,
-    applyStartTime,
     attachments,
     calculateRepairs,
+    correctedStartTime,
     exportFit,
     fitExportState,
     removeAttachment,
@@ -31,6 +31,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
     selectedId,
     selectAttachment,
     setActiveTab,
+    setCorrectedStartTime,
     setRepairState,
   } = workbench;
 
@@ -128,7 +129,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
             </nav>
             <div className="tabContent">{content}</div>
             {repairState.status === 'not-requested' && (
-              <StartTimeRepair result={result} onApply={applyStartTime} />
+              <StartTimeRepair result={result} onChange={setCorrectedStartTime} />
             )}
             <RepairWizard
               result={result}
@@ -136,6 +137,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
               onState={setRepairState}
               onCalculate={calculateRepairs}
               onApply={applyCandidate}
+              correctedStartTime={correctedStartTime}
               fitExportState={fitExportState}
               onExportFit={() => {
                 void exportFit();

@@ -5,7 +5,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   result: ParsedFitFile;
-  onApply: (correctedStartTime: string) => void;
+  onChange: (correctedStartTime: string | undefined) => void;
 }
 
 function toLocalInputValue(timestamp: string): string {
@@ -29,7 +29,7 @@ function describeOffset(offsetMs: number): string {
   return `${sign}${days ? `${days}d ` : ''}${hours}h ${minutes}m`;
 }
 
-export function StartTimeRepair({ result, onApply }: Props) {
+export function StartTimeRepair({ result, onChange }: Props) {
   const { language, t } = useLanguage();
   const originalStartTime = result.normalized.session?.startTime;
   const originalStartMs = originalStartTime ? Date.parse(originalStartTime) : NaN;
@@ -40,7 +40,8 @@ export function StartTimeRepair({ result, onApply }: Props) {
   useEffect(() => {
     setEnabled(false);
     setCorrectedLocalTime(validOriginalStartTime ? toLocalInputValue(validOriginalStartTime) : '');
-  }, [validOriginalStartTime, result.file.name]);
+    onChange(undefined);
+  }, [validOriginalStartTime, onChange, result.file.name]);
 
   const correctedStartTime = useMemo(
     () => toIsoTimestamp(correctedLocalTime),
@@ -48,10 +49,6 @@ export function StartTimeRepair({ result, onApply }: Props) {
   );
   const offsetMs = correctedStartTime ? Date.parse(correctedStartTime) - originalStartMs : 0;
   const canApply = Boolean(correctedStartTime && validOriginalStartTime && offsetMs !== 0);
-  const applyCorrection = () => {
-    if (correctedStartTime) onApply(correctedStartTime);
-  };
-
   return (
     <section className="startTimeRepair" aria-labelledby="repair-options-title">
       <div className="repairOptionsHeading">
@@ -67,7 +64,11 @@ export function StartTimeRepair({ result, onApply }: Props) {
           type="checkbox"
           checked={enabled}
           disabled={!validOriginalStartTime}
-          onChange={(event) => setEnabled(event.target.checked)}
+          onChange={(event) => {
+            const nextEnabled = event.target.checked;
+            setEnabled(nextEnabled);
+            onChange(nextEnabled && canApply ? correctedStartTime : undefined);
+          }}
         />
         <span>
           <strong>{t('repair.startTimeWrong')}</strong>
@@ -89,7 +90,16 @@ export function StartTimeRepair({ result, onApply }: Props) {
             id="corrected-start-time"
             type="datetime-local"
             value={correctedLocalTime}
-            onChange={(event) => setCorrectedLocalTime(event.target.value)}
+            onChange={(event) => {
+              const nextLocalTime = event.target.value;
+              const nextStartTime = toIsoTimestamp(nextLocalTime);
+              setCorrectedLocalTime(nextLocalTime);
+              onChange(
+                nextStartTime && Date.parse(nextStartTime) !== originalStartMs
+                  ? nextStartTime
+                  : undefined,
+              );
+            }}
           />
           <p>{t('repair.startTimeHelp')}</p>
           {canApply && (
@@ -97,14 +107,7 @@ export function StartTimeRepair({ result, onApply }: Props) {
               {t('repair.timeOffset', { offset: describeOffset(offsetMs) })}
             </p>
           )}
-          <button
-            type="button"
-            className="button primary"
-            disabled={!canApply}
-            onClick={applyCorrection}
-          >
-            {t('repair.applyTime')}
-          </button>
+          <p>{t('repair.timeAppliedTogether')}</p>
         </div>
       )}
     </section>

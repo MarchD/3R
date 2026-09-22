@@ -121,6 +121,7 @@ const en: Record<string, string> = {
     'Enter one corrected start time. Every related timestamp will move by the same offset; durations and sensor readings stay unchanged.',
   'repair.timeOffset': 'Timeline offset: {offset}',
   'repair.applyTime': 'Apply time correction',
+  'repair.timeAppliedTogether': 'This change will be applied together with the distance repair.',
   'repair.timeChanged': 'Activity start corrected',
   'repair.timeChange': '{before} → {after}',
   'repair.available':
@@ -298,6 +299,7 @@ const uk: Record<string, string> = {
     'Введіть один правильний час початку. Усі пов’язані часові позначки змістяться на однакову величину; тривалість і показники датчиків не зміняться.',
   'repair.timeOffset': 'Зсув часової шкали: {offset}',
   'repair.applyTime': 'Застосувати виправлення часу',
+  'repair.timeAppliedTogether': 'Цю зміну буде застосовано разом із виправленням дистанції.',
   'repair.timeChanged': 'Час початку активності виправлено',
   'repair.timeChange': '{before} → {after}',
   'repair.available':

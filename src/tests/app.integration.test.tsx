@@ -130,7 +130,7 @@ describe('complete local analysis and repair flow', () => {
     expect(repairRequests).toBe(0);
   });
 
-  it('corrects the start time from one input and leaves distance repair optional', async () => {
+  it('applies the corrected start time and repaired distance together', async () => {
     const user = userEvent.setup();
     renderApp();
     const file = new File([new Uint8Array([1, 2, 3])], 'wrong-time.fit', {
@@ -144,11 +144,20 @@ describe('complete local analysis and repair flow', () => {
     fireEvent.change(screen.getByLabelText('Correct start date and time'), {
       target: { value: '2024-01-02T03:30' },
     });
-    await user.click(screen.getByRole('button', { name: 'Apply time correction' }));
+    expect(screen.getByText(/applied together with the distance repair/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Repair activity' }));
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Continue to repair' }),
+    );
+    await waitFor(() => expect(repairRequests).toBe(1));
+    await user.click((await screen.findAllByRole('radio'))[0]);
+    await user.click(screen.getByRole('button', { name: 'Preview selected repair' }));
+    expect(screen.getByText('Activity start corrected')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
 
     expect(screen.getByText('Activity start corrected')).toBeInTheDocument();
     expect(screen.getByText('Derived files are ready')).toBeInTheDocument();
-    expect(repairRequests).toBe(0);
   });
 
   it('switches the complete interface to Ukrainian and remembers the choice', async () => {

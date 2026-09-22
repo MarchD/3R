@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FitExportUiState } from '../components/RepairWizard/RepairWizard';
 import { useToast } from '../contexts/ToastContext';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
-import { applyTimestampRepair } from '../fit/repair/applyTimestampRepair';
 import { validateRepairEligibility } from '../fit/repair/validateRepairEligibility';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { Attachment, FitParseError } from '../models/fit';
@@ -32,6 +31,9 @@ export function useFitWorkbench() {
   const [activeTab, setActiveTab] = useState<WorkbenchTab>('summary');
   const [repairStates, setRepairStates] = useState<Record<string, RepairState>>({});
   const [fitExportStates, setFitExportStates] = useState<Record<string, FitExportUiState>>({});
+  const [correctedStartTimes, setCorrectedStartTimes] = useState<
+    Record<string, string | undefined>
+  >({});
   const workers = useRef(new Map<string, Worker>());
 
   const stopWorker = useCallback((key: string) => {
@@ -153,6 +155,7 @@ export function useFitWorkbench() {
       });
       setRepairStates((current) => withoutKey(current, id));
       setFitExportStates((current) => withoutKey(current, id));
+      setCorrectedStartTimes((current) => withoutKey(current, id));
     },
     [selectedId, stopWorker],
   );
@@ -178,6 +181,15 @@ export function useFitWorkbench() {
   const fitExportState = selectedId
     ? (fitExportStates[selectedId] ?? INITIAL_EXPORT_STATE)
     : INITIAL_EXPORT_STATE;
+  const correctedStartTime = selectedId ? correctedStartTimes[selectedId] : undefined;
+
+  const setCorrectedStartTime = useCallback(
+    (value: string | undefined) => {
+      if (!selectedId) return;
+      setCorrectedStartTimes((current) => ({ ...current, [selectedId]: value }));
+    },
+    [selectedId],
+  );
 
   const setRepairState = useCallback(
     (state: RepairState) => {
@@ -216,7 +228,13 @@ export function useFitWorkbench() {
   const applyCandidate = useCallback(
     (candidate: RepairCandidate) => {
       if (!result) return;
-      const applied = applyRepairPatch(result.file.name, result.normalized, candidate);
+      const applied = applyRepairPatch(
+        result.file.name,
+        result.normalized,
+        candidate,
+        undefined,
+        correctedStartTime,
+      );
       setRepairState({
         status: 'applied',
         ...applied,
@@ -229,30 +247,7 @@ export function useFitWorkbench() {
         }));
       }
     },
-    [repairState, result, selectedId, setRepairState],
-  );
-
-  const applyStartTime = useCallback(
-    (correctedStartTime: string) => {
-      if (!result) return;
-      try {
-        const applied = applyTimestampRepair(
-          result.file.name,
-          result.normalized,
-          correctedStartTime,
-        );
-        setRepairState({ status: 'applied', ...applied, candidates: [] });
-        if (selectedId) {
-          setFitExportStates((current) => ({
-            ...current,
-            [selectedId]: INITIAL_EXPORT_STATE,
-          }));
-        }
-      } catch (cause) {
-        showToast(cause instanceof Error ? cause.message : 'The start time could not be changed.');
-      }
-    },
-    [result, selectedId, setRepairState, showToast],
+    [correctedStartTime, repairState, result, selectedId, setRepairState],
   );
 
   const exportFit = useCallback(async () => {
@@ -313,9 +308,9 @@ export function useFitWorkbench() {
     activeTab,
     addFiles,
     applyCandidate,
-    applyStartTime,
     attachments,
     calculateRepairs,
+    correctedStartTime,
     exportFit,
     fitExportState,
     removeAttachment,
@@ -326,6 +321,7 @@ export function useFitWorkbench() {
     selectedId,
     selectAttachment,
     setActiveTab,
+    setCorrectedStartTime,
     setRepairState,
   };
 }
