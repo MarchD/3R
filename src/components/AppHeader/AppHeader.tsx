@@ -1,8 +1,10 @@
-import { Activity, Globe2, ShieldCheck } from 'lucide-react';
+import { Activity, Globe2, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { useLanguage, type Language } from '../../i18n/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export function AppHeader() {
   const { language, setLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="appHeader">
@@ -32,6 +34,14 @@ export function AppHeader() {
             <option value="uk">Українська</option>
           </select>
         </label>
+        <button
+          type="button"
+          className="themeToggle"
+          onClick={toggleTheme}
+          aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+        >
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
       </div>
     </header>
   );

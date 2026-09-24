@@ -2051,3 +2051,141 @@ details summary {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- Theme toggle button ---- */
+.themeToggle {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.themeToggle:hover {
+  color: var(--ink);
+  border-color: var(--blue);
+}
+
+/* ---- Dark theme overrides ---- */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ink: #e6ecf5;
+  --muted: #8a9ab5;
+  --line: #2a3a52;
+  --paper: #1a2438;
+  --wash: #232f47;
+  --blue: #5b8def;
+  --blue-dark: #4a7de0;
+  --blue-soft: #1c2c49;
+  --amber: #d99742;
+  --amber-soft: #2a2417;
+  --red: #e06c70;
+  --red-soft: #2c1a1d;
+  --green: #3da886;
+  --green-soft: #182e26;
+  color: var(--ink);
+  background: #131a28;
+}
+[data-theme='dark'] body {
+  background: linear-gradient(180deg, #18222f 0, #131a28 420px);
+}
+[data-theme='dark'] .appHeader {
+  background: rgba(19, 26, 40, 0.88);
+  border-bottom-color: rgba(42, 58, 82, 0.72);
+}
+[data-theme='dark'] .dropzone {
+  border-color: #3a4a62;
+  background: rgba(26, 36, 56, 0.72);
+}
+[data-theme='dark'] .asideHeading span {
+  background: var(--wash);
+}
+[data-theme='dark'] .attachment.selected {
+  border-color: #3d5275;
+}
+[data-theme='dark'] .rawRow {
+  border-bottom-color: var(--line);
+}
+[data-theme='dark'] .recordHeader {
+  background: var(--wash);
+}
+[data-theme='dark'] .recordRow span {
+  border-right-color: var(--line);
+}
+[data-theme='dark'] .recordRow {
+  border-bottom-color: var(--line);
+}
+[data-theme='dark'] .recordRow:nth-child(even) {
+  background: rgba(35, 47, 71, 0.5);
+}
+[data-theme='dark'] .alphaGps {
+  border-color: #5a4820;
+}
+[data-theme='dark'] .alphaEvidence {
+  background: rgba(26, 36, 56, 0.78);
+}
+[data-theme='dark'] .startLocationMap,
+[data-theme='dark'] .routeComparisonCanvas {
+  background: var(--wash);
+}
+[data-theme='dark'] .repairEntry {
+  border-color: #2d4263;
+}
+[data-theme='dark'] .repairBlocked {
+  border-color: #5a4820;
+}
+[data-theme='dark'] .repairBlocked .eligibilityBadge {
+  background: rgba(26, 36, 56, 0.62);
+}
+[data-theme='dark'] .spinner {
+  border-color: #3a4a62;
+}
+[data-theme='dark'] .appliedPanel {
+  border-color: #2d5e4d;
+  background: var(--green-soft);
+}
+[data-theme='dark'] .timeRepairSummary {
+  background: var(--green-soft);
+}
+[data-theme='dark'] .derivedOutputGroup {
+  border-top-color: var(--line);
+}
+[data-theme='dark'] .fitExport {
+  border-color: #2d4263;
+}
+[data-theme='dark'] .emptyState {
+  background: rgba(26, 36, 56, 0.62);
+}
+[data-theme='dark'] .garminGuide {
+  background: rgba(26, 36, 56, 0.7);
+}
+[data-theme='dark'] .guideSteps code {
+  background: var(--wash);
+}
+[data-theme='dark'] .languagePicker,
+[data-theme='dark'] .button.secondary,
+[data-theme='dark'] .attachment.selected,
+[data-theme='dark'] .search,
+[data-theme='dark'] .jsonTree,
+[data-theme='dark'] .virtualList,
+[data-theme='dark'] .columnPicker > div,
+[data-theme='dark'] .alphaGpsIcon,
+[data-theme='dark'] .startLocationEditor,
+[data-theme='dark'] .startSearchControl,
+[data-theme='dark'] .placeResults,
+[data-theme='dark'] .alphaGpsRequest,
+[data-theme='dark'] .routeComparisonMap,
+[data-theme='dark'] .matchEvidencePanel,
+[data-theme='dark'] .startTimeRepair,
+[data-theme='dark'] .dialog,
+[data-theme='dark'] .candidate,
+[data-theme='dark'] .fitExport {
+  background: var(--paper);
+}
+[data-theme='dark'] .workbench > aside {
+  background: var(--wash);
+}
