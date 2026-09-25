@@ -1301,7 +1301,7 @@ details summary {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border: 1px solid #c7d6f5;
+  border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--blue-soft);
 }
@@ -1320,7 +1320,7 @@ details summary {
   color: var(--green);
 }
 .repairBlocked {
-  border-color: #ecd49f;
+  border-color: var(--line);
   background: var(--amber-soft);
 }
 .repairBlocked > svg {
@@ -1331,7 +1331,7 @@ details summary {
   padding: 5px 8px;
   border-radius: 6px;
   color: var(--amber);
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--paper);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -1350,7 +1350,7 @@ details summary {
   width: min(520px, 100%);
   padding: 28px;
   border-radius: 15px;
-  background: white;
+  background: var(--paper);
   box-shadow: 0 30px 90px rgba(13, 23, 40, 0.3);
 }
 .dialog > svg {
@@ -1394,7 +1394,7 @@ details summary {
 .spinner {
   width: 22px;
   height: 22px;
-  border: 2px solid #cad5e4;
+  border: 2px solid var(--line);
   border-top-color: var(--blue);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -1404,9 +1404,9 @@ details summary {
 .appliedPanel {
   margin: 0 24px 24px;
   padding: 22px;
-  border: 1px solid #cbd7e7;
+  border: 1px solid var(--line);
   border-radius: 13px;
-  background: #f8faff;
+  background: var(--paper);
 }
 .repairHeading {
   display: flex;
@@ -1447,7 +1447,7 @@ details summary {
   padding: 15px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: white;
+  background: var(--paper);
 }
 .candidateSelected {
   border-color: var(--blue);
@@ -1555,8 +1555,8 @@ details summary {
 .appliedPanel {
   display: grid;
   gap: 16px;
-  background: #f8fbfa;
-  border-color: #b8dfd1;
+  background: var(--green-soft);
+  border-color: var(--line);
 }
 .appliedPanel p {
   margin: 4px 0 0;
@@ -1583,10 +1583,10 @@ details summary {
   gap: 4px;
   border-radius: 8px;
   color: var(--green);
-  background: #edf8f4;
+  background: var(--green-soft);
 }
 .timeRepairSummary span {
-  color: var(--text);
+  color: var(--ink);
   font-size: 13px;
 }
 .gpsRepairSummary {
@@ -1599,7 +1599,7 @@ details summary {
   grid-template-columns: 150px 1fr;
   align-items: center;
   gap: 16px;
-  border-top: 1px solid #d6e7e1;
+  border-top: 1px solid var(--line);
 }
 .derivedOutputGroup > span,
 .fitExport > div > span {
@@ -1618,9 +1618,9 @@ details summary {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border: 1px solid #c6d5eb;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: white;
+  background: var(--paper);
 }
 .fitExport > div {
   display: grid;
