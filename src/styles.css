@@ -1,6 +1,6 @@
 :root {
   font-family: Aptos, 'Segoe UI', system-ui, sans-serif;
-  color: #17243a;
+  color: var(--ink);
   background: #edf2f8;
   font-synthesis: none;
   --ink: #17243a;
@@ -19,6 +19,23 @@
   --green-soft: #eaf8f2;
 }
 
+[data-theme='dark'] {
+  --ink: #d8e1ee;
+  --muted: #8b9ab0;
+  --line: #2d3b52;
+  --paper: #1a2333;
+  --wash: #141c2b;
+  --blue: #5b8df0;
+  --blue-dark: #4070d8;
+  --blue-soft: #1c2840;
+  --amber: #e0a948;
+  --amber-soft: #2e2418;
+  --red: #e57373;
+  --red-soft: #2e1a1c;
+  --green: #4ebd91;
+  --green-soft: #16292a;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -27,6 +44,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: linear-gradient(180deg, #f7f9fc 0, #edf2f8 420px);
+}
+[data-theme='dark'] body {
+  background: linear-gradient(180deg, #0f1623 0, #141c2b 420px);
 }
 button,
 input,
@@ -57,12 +77,15 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(184, 198, 216, 0.72);
+  border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.84);
   backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
   z-index: 20;
+}
+[data-theme='dark'] .appHeader {
+  background: rgba(20, 28, 43, 0.84);
 }
 .brand {
   display: flex;
@@ -103,6 +126,22 @@ button:disabled {
   align-items: center;
   gap: 18px;
 }
+.themeToggle {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.themeToggle:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
 .languagePicker {
   min-height: 34px;
   padding: 0 8px;
@@ -111,7 +150,7 @@ button:disabled {
   gap: 5px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: white;
+  background: var(--paper);
   color: var(--muted);
 }
 .languagePicker select {
@@ -165,9 +204,9 @@ main {
 .dropzone {
   min-height: 150px;
   padding: 24px;
-  border: 1.5px dashed #9fb0c6;
+  border: 1.5px dashed var(--line);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--paper);
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -218,11 +257,11 @@ main {
 }
 .button.secondary {
   color: var(--ink);
-  background: white;
+  background: var(--paper);
   border-color: var(--line);
 }
 .button.secondary:hover {
-  border-color: #9bacc3;
+  border-color: var(--line);
   background: var(--wash);
 }
 .textButton {
@@ -250,7 +289,7 @@ main {
 }
 .workbench > aside {
   padding: 18px 12px;
-  background: #f6f8fb;
+  background: var(--wash);
   border-right: 1px solid var(--line);
 }
 .asideHeading {
@@ -265,7 +304,7 @@ main {
   display: grid;
   place-items: center;
   border-radius: 7px;
-  background: #e1e7f0;
+  background: var(--wash);
   color: var(--muted);
 }
 .attachmentList {
@@ -278,8 +317,8 @@ main {
   border-radius: 10px;
 }
 .attachment.selected {
-  background: white;
-  border-color: #cbd6e5;
+  background: var(--paper);
+  border-color: var(--line);
   box-shadow: 0 3px 11px rgba(44, 59, 83, 0.07);
 }
 .attachmentMain {
@@ -512,7 +551,7 @@ dt {
   gap: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: white;
+  background: var(--paper);
   color: var(--muted);
 }
 .search input {
@@ -543,7 +582,7 @@ dt {
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fbfcfe;
+  background: var(--wash);
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 12px;
 }
@@ -566,11 +605,11 @@ dt {
   height: 560px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fbfcfe;
+  background: var(--wash);
 }
 .rawRow {
   padding: 10px 12px;
-  border-bottom: 1px solid #e6ebf2;
+  border-bottom: 1px solid var(--line);
   display: grid;
   grid-template-columns: 170px 1fr;
   gap: 14px;
@@ -625,7 +664,7 @@ dt {
   gap: 9px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: white;
+  background: var(--paper);
   box-shadow: 0 12px 30px rgba(48, 63, 85, 0.14);
 }
 .columnPicker label {
@@ -643,7 +682,7 @@ dt {
 }
 .recordHeader {
   height: 40px;
-  background: #f0f4f9;
+  background: var(--wash);
   border-bottom: 1px solid var(--line);
 }
 .recordHeader strong,
@@ -651,7 +690,7 @@ dt {
   padding: 0 10px;
   display: flex;
   align-items: center;
-  border-right: 1px solid #e0e7f0;
+  border-right: 1px solid var(--line);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -663,10 +702,10 @@ dt {
   min-width: 1300px;
 }
 .recordRow {
-  border-bottom: 1px solid #e8edf3;
+  border-bottom: 1px solid var(--line);
 }
 .recordRow:nth-child(even) {
-  background: #fafcff;
+  background: var(--wash);
 }
 
 .anomalyList {
@@ -725,10 +764,10 @@ details summary {
   padding: 20px;
   display: grid;
   gap: 16px;
-  border: 1px solid #e4c887;
+  border: 1px solid var(--line);
   border-left: 4px solid var(--amber);
   border-radius: 11px;
-  background: linear-gradient(90deg, var(--amber-soft), #fff 38%);
+  background: linear-gradient(90deg, var(--amber-soft), var(--paper) 38%);
 }
 .alphaGpsHeading {
   display: grid;
@@ -743,8 +782,8 @@ details summary {
   place-items: center;
   border-radius: 50%;
   color: var(--amber);
-  background: white;
-  box-shadow: inset 0 0 0 1px #ead49d;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 .alphaGpsHeading h2 {
   margin: 3px 0 4px;
@@ -769,7 +808,7 @@ details summary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   border: 1px solid rgba(168, 97, 8, 0.18);
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--paper);
 }
 .alphaEvidence > div {
   padding: 11px 13px;
@@ -793,7 +832,7 @@ details summary {
   overflow: hidden;
   border: 1px solid rgba(36, 87, 214, 0.2);
   border-radius: 10px;
-  background: white;
+  background: var(--paper);
 }
 .startLocationHeading {
   padding: 14px 14px 0;
@@ -850,7 +889,7 @@ details summary {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--muted);
-  background: white;
+  background: var(--paper);
 }
 .startSearchControl:focus-within {
   border-color: var(--blue);
@@ -896,7 +935,7 @@ details summary {
   list-style: none;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: white;
+  background: var(--paper);
   box-shadow: 0 12px 28px rgba(27, 38, 59, 0.16);
 }
 .placeResults button {
@@ -953,7 +992,7 @@ details summary {
   height: 350px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  background: #e7ecf1;
+  background: var(--wash);
 }
 .startLocationMap .leaflet-control-attribution {
   font-size: 9px;
@@ -1011,7 +1050,7 @@ details summary {
   gap: 18px;
   border-radius: 9px;
   color: var(--ink);
-  background: white;
+  background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 .alphaGpsRequest strong {
@@ -1025,7 +1064,7 @@ details summary {
   background: var(--amber);
 }
 .button.alphaButton:hover:not(:disabled) {
-  background: #844b05;
+  background: var(--amber);
 }
 .alphaGpsResult {
   display: grid;
@@ -1036,7 +1075,7 @@ details summary {
   overflow: hidden;
   border: 1px solid rgba(36, 87, 214, 0.18);
   border-radius: 10px;
-  background: white;
+  background: var(--paper);
 }
 .routeComparisonMap figcaption {
   min-height: 43px;
@@ -1081,7 +1120,7 @@ details summary {
 }
 .routeComparisonCanvas {
   height: 410px;
-  background: #e7ecf1;
+  background: var(--wash);
 }
 .routeComparisonCanvas .leaflet-control-attribution {
   font-size: 9px;
@@ -1118,7 +1157,7 @@ details summary {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: white;
+  background: var(--paper);
 }
 .matchEvidenceHeading {
   padding: 12px 14px;
@@ -1190,7 +1229,7 @@ details summary {
   color: var(--muted);
 }
 .matchEvidenceRow.unavailable .matchEvidenceTrack {
-  background: repeating-linear-gradient(135deg, var(--wash) 0 4px, #fff 4px 8px);
+  background: repeating-linear-gradient(135deg, var(--wash) 0 4px, var(--paper) 4px 8px);
 }
 .alphaGpsWarning,
 .gpsRepairSummary {
@@ -1230,7 +1269,7 @@ details summary {
   gap: 14px;
   border: 1px solid var(--line);
   border-radius: 11px;
-  background: white;
+  background: var(--paper);
 }
 .repairOptionsHeading {
   display: flex;
@@ -1667,7 +1706,7 @@ details summary {
   padding: 34px;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--paper);
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   align-items: center;
@@ -1722,7 +1761,7 @@ details summary {
   padding: 24px 28px;
   border: 1px solid var(--line);
   border-radius: 15px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--paper);
 }
 .guideHeading {
   display: flex;
@@ -1830,7 +1869,7 @@ details summary {
 .guideSteps code {
   padding: 1px 4px;
   border-radius: 4px;
-  background: #e9eef5;
+  background: var(--wash);
   font-size: 11px;
 }
 .toast {
