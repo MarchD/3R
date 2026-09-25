@@ -1,9 +1,18 @@
-import type { GeoPoint, GpsEvidence, GpsMatchProposal } from './types';
-import { createGpsMatchProposal, relocateGpsEvidence, sampleTrace } from './traceAnalysis';
+import type { DistanceReference, GeoPoint, GpsEvidence, GpsMatchProposal } from './types';
+import {
+  buildHeadingGuide,
+  createGpsMatchProposal,
+  destinationPoint,
+  hasUsableGpsShape,
+  relocateGpsEvidence,
+  sampleTrace,
+} from './traceAnalysis';
 import type { NormalizedActivity } from '../../models/fit';
 
 const ENDPOINT = 'https://valhalla1.openstreetmap.de/trace_route';
 const ELEVATION_ENDPOINT = 'https://valhalla1.openstreetmap.de/height';
+const ROUTE_ENDPOINT = 'https://valhalla1.openstreetmap.de/route';
+const MAX_TRACE_SCALE = 4;
 
 interface ValhallaResponse {
   error?: string;
@@ -114,10 +123,40 @@ export async function requestGpsMatch(
   fetcher: typeof fetch = fetch,
   signal?: AbortSignal,
   correctedStart?: GeoPoint,
+  distanceReference?: DistanceReference,
 ): Promise<GpsMatchProposal> {
-  const matchingEvidence = correctedStart
-    ? relocateGpsEvidence(evidence, correctedStart)
+  const relocatedEvidence = correctedStart
+    ? relocateGpsEvidence(evidence, correctedStart, distanceReference?.distanceM)
     : evidence;
+  const requestedScale =
+    distanceReference && evidence.traceDistanceM > 0
+      ? distanceReference.distanceM / evidence.traceDistanceM
+      : 1;
+  const headingGuide =
+    correctedStart &&
+    distanceReference &&
+    (!hasUsableGpsShape(evidence) || requestedScale > MAX_TRACE_SCALE)
+      ? buildHeadingGuide(
+          activity,
+          correctedStart,
+          distanceReference.distanceM,
+          distanceReference.recordProgresses,
+        )
+      : [];
+  if (!hasUsableGpsShape(evidence) && headingGuide.length < 2) {
+    throw new Error('The GPS trace is too damaged and there are no usable heading records.');
+  }
+  const reconstructionMethod: GpsMatchProposal['reconstructionMethod'] =
+    headingGuide.length >= 2 ? 'heading_dead_reckoning' : 'trace_match';
+  const matchingEvidence =
+    reconstructionMethod === 'heading_dead_reckoning'
+      ? {
+          ...relocatedEvidence,
+          cleanedPoints: headingGuide,
+          traceDistanceM: distanceReference!.distanceM,
+          scaleFactor: requestedScale,
+        }
+      : relocatedEvidence;
   const submittedPoints = sampleTrace(matchingEvidence.cleanedPoints);
   if (submittedPoints.length < 2) {
     throw new Error('At least two valid GPS positions are required for map matching.');
@@ -166,10 +205,141 @@ export async function requestGpsMatch(
     submittedPoints,
     matchedRoute,
     routeElevations,
+    distanceReference,
+    reconstructionMethod,
   );
   return {
     ...proposal,
     recordedStart: evidence.sourcePoints[0],
     correctedStart: submittedPoints[0],
   };
+}
+
+function loopAnchors(start: GeoPoint, bearing: number, radiusM: number): GeoPoint[] {
+  return [
+    start,
+    destinationPoint(start, bearing, radiusM),
+    destinationPoint(start, bearing + 90, radiusM),
+    start,
+  ];
+}
+
+async function requestLoopRoute(
+  activity: NormalizedActivity,
+  evidence: GpsEvidence,
+  start: GeoPoint,
+  distanceReference: DistanceReference,
+  bearing: number,
+  radiusM: number,
+  fetcher: typeof fetch,
+  signal?: AbortSignal,
+): Promise<GpsMatchProposal> {
+  const anchors = loopAnchors(start, bearing, radiusM);
+  const response = await fetcher(ROUTE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Client-Id': '3r-fit-repair-alpha' },
+    body: JSON.stringify({
+      locations: anchors.map((point) => ({
+        lat: point.latitude,
+        lon: point.longitude,
+        type: 'break',
+      })),
+      costing: activity.sport === 'cycling' ? 'bicycle' : 'pedestrian',
+      directions_type: 'none',
+      shape_format: 'polyline6',
+    }),
+    signal,
+  });
+  const payload = (await response.json()) as ValhallaResponse;
+  if (!response.ok) throw new Error(payload.error ?? `Routing failed (${response.status}).`);
+  const route = joinedRoute(payload);
+  const artificialEvidence = { ...evidence, cleanedPoints: [], scaleFactor: 1 };
+  const submittedPoints = anchors.map((point, index) => ({ ...point, recordIndex: index }));
+  const proposal = createGpsMatchProposal(
+    activity,
+    artificialEvidence,
+    submittedPoints,
+    route,
+    [],
+    distanceReference,
+    'generated_loop',
+  );
+  return { ...proposal, candidateId: `loop-${bearing}-${radiusM.toFixed(1)}` };
+}
+
+export async function requestLoopCandidates(
+  activity: NormalizedActivity,
+  evidence: GpsEvidence,
+  start: GeoPoint,
+  distanceReference: DistanceReference,
+  fetcher: typeof fetch = fetch,
+  signal?: AbortSignal,
+): Promise<GpsMatchProposal[]> {
+  const bearings = [0, 90, 180, 270];
+  const radiusM = distanceReference.distanceM / 4;
+  const results = await Promise.allSettled(
+    bearings.map((bearing) =>
+      requestLoopRoute(
+        activity,
+        evidence,
+        start,
+        distanceReference,
+        bearing,
+        radiusM,
+        fetcher,
+        signal,
+      ),
+    ),
+  );
+  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  const proposals = results.flatMap((result) =>
+    result.status === 'fulfilled' ? [result.value] : [],
+  );
+  if (!proposals.length) throw new Error('No road loop could be found near the selected start.');
+  proposals.sort(
+    (first, second) =>
+      (first.distanceDeltaPercent ?? Infinity) - (second.distanceDeltaPercent ?? Infinity),
+  );
+  const bearingIndex = results.findIndex(
+    (result) => result.status === 'fulfilled' && result.value === proposals[0],
+  );
+  const refine = async (
+    current: GpsMatchProposal,
+    currentRadius: number,
+    attemptsLeft: number,
+  ): Promise<GpsMatchProposal[]> => {
+    if (
+      attemptsLeft === 0 ||
+      (current.distanceDeltaPercent ?? 0) <= 5 ||
+      current.routeDistanceM <= 0
+    )
+      return [];
+    const adjustedRadius =
+      currentRadius *
+      Math.max(0.6, Math.min(1.4, distanceReference.distanceM / current.routeDistanceM));
+    if (Math.abs(adjustedRadius - currentRadius) < 20) return [];
+    try {
+      const refined = await requestLoopRoute(
+        activity,
+        evidence,
+        start,
+        distanceReference,
+        bearings[bearingIndex],
+        adjustedRadius,
+        fetcher,
+        signal,
+      );
+      if ((refined.distanceDeltaPercent ?? Infinity) >= (current.distanceDeltaPercent ?? Infinity))
+        return [refined];
+      return [refined, ...(await refine(refined, adjustedRadius, attemptsLeft - 1))];
+    } catch (cause) {
+      if (signal?.aborted) throw cause;
+      return [];
+    }
+  };
+  const refinements = await refine(proposals[0], radiusM, 2);
+  return [...proposals, ...refinements].sort(
+    (first, second) =>
+      (first.distanceDeltaPercent ?? Infinity) - (second.distanceDeltaPercent ?? Infinity),
+  );
 }

@@ -172,11 +172,15 @@ export function scoreGpsMatch(
     (sum, [metric, weight]) => sum + (metric ? weight : 0),
     0,
   );
-  const overall = availableWeight
+  const weightedOverall = availableWeight
     ? Math.round(
         weightedMetrics.reduce((sum, [metric, weight]) => sum + (metric?.score ?? 0) * weight, 0) /
           availableWeight,
       )
     : 0;
+  const overall =
+    metrics.distance && metrics.distance.value > 35
+      ? Math.min(weightedOverall, 35)
+      : weightedOverall;
   return { overall, ...metrics };
 }

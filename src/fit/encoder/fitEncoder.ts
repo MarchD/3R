@@ -77,6 +77,13 @@ function semicirclesToDegrees(value: unknown): number | undefined {
   return typeof value === 'number' ? (value * 180) / 2 ** 31 : undefined;
 }
 
+function stableFieldOrder(message: MutableMesg): MutableMesg {
+  // The SDK reuses definitions by field set, so equal sets must also be written in equal order.
+  return Object.fromEntries(
+    Object.entries(message).sort(([first], [second]) => first.localeCompare(second)),
+  ) as MutableMesg;
+}
+
 function shiftMessageTimestamps(
   messageNumber: number,
   message: MutableMesg,
@@ -244,7 +251,9 @@ export function encodeRepairedFit(
 
   definitions.forEach((definition) => addUnknownProfileFields(definition, unknownMessageNumbers));
   const encoder = new Encoder({ fieldDescriptions });
-  allMessages.forEach(({ messageNumber, message }) => encoder.onMesg(messageNumber, message));
+  allMessages.forEach(({ messageNumber, message }) =>
+    encoder.onMesg(messageNumber, stableFieldOrder(message)),
+  );
   const bytes = encoder.close();
 
   const validationDecoder = new Decoder(
@@ -275,7 +284,9 @@ export function encodeRepairedFit(
       Math.abs(latitude - positionPatch.latitude) > 0.00001 ||
       Math.abs(longitude - positionPatch.longitude) > 0.00001
     ) {
-      throw new Error('The encoded FIT file did not preserve every reconstructed position.');
+      throw new Error(
+        `The encoded FIT file did not preserve reconstructed position at record ${positionPatch.recordIndex}.`,
+      );
     }
   }
   if (

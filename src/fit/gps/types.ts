@@ -1,4 +1,4 @@
-import type { PositionPatch } from '../../models/repair';
+import type { PositionPatch, RecordPatch } from '../../models/repair';
 
 export interface GeoPoint {
   latitude: number;
@@ -19,6 +19,8 @@ export interface GpsEvidence {
   headingRecords: number;
   altitudeRecords: number;
   accuracyRecords: number;
+  traceDistanceM: number;
+  scaleFactor: number;
 }
 
 export interface PositionLike extends GeoPoint {
@@ -39,7 +41,16 @@ export interface MatchEvidenceScores {
   altitude?: MatchEvidenceMetric;
 }
 
+export interface DistanceReference {
+  distanceM: number;
+  source: 'repair_consensus' | 'recorded_session';
+  estimateCount?: number;
+  recordProgresses?: number[];
+  recordPatches?: RecordPatch[];
+}
+
 export interface GpsMatchProposal {
+  candidateId: string;
   provider: 'Valhalla / OpenStreetMap';
   originalTrace: GeoPoint[];
   recordedStart: GeoPoint;
@@ -51,7 +62,11 @@ export interface GpsMatchProposal {
   rejectedPointCount: number;
   routeDistanceM: number;
   recordedDistanceM?: number;
+  distanceReference?: DistanceReference;
   distanceDeltaPercent?: number;
+  distanceConflict: boolean;
+  traceScaleFactor: number;
+  reconstructionMethod: 'trace_match' | 'heading_dead_reckoning' | 'generated_loop';
   evidenceScores: MatchEvidenceScores;
   confidence: 'low' | 'medium' | 'high';
 }

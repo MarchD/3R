@@ -3,10 +3,17 @@ import {
   analyzeGpsEvidence,
   createGpsMatchProposal,
   distanceBetween,
+  hasUsableGpsShape,
   relocateGpsEvidence,
+  traceDistance,
 } from '../fit/gps/traceAnalysis';
-import { decodePolyline, requestGpsMatch } from '../fit/gps/valhallaMapMatcher';
+import {
+  decodePolyline,
+  requestGpsMatch,
+  requestLoopCandidates,
+} from '../fit/gps/valhallaMapMatcher';
 import { applyGpsRepair } from '../fit/repair/applyGpsRepair';
+import { estimateDistanceConsensus } from '../fit/repair/distanceConsensus';
 import { activityFixture } from './fixtures';
 
 const MATCHED_SHAPE =
@@ -101,6 +108,105 @@ describe('alpha GPS repair', () => {
     });
   });
 
+  it('scales a 5 km GPS trace to the 12 km sensor estimate before map matching', () => {
+    const activity = activityFixture();
+    activity.records = [
+      {
+        ...activity.records[0],
+        index: 0,
+        timestamp: '2024-01-01T00:00:00.000Z',
+        position: { latitude: 50, longitude: 30 },
+      },
+      {
+        ...activity.records[1],
+        index: 1,
+        timestamp: '2024-01-01T01:00:00.000Z',
+        position: { latitude: 50.045, longitude: 30 },
+      },
+    ];
+    const evidence = analyzeGpsEvidence(activity);
+
+    const relocated = relocateGpsEvidence(evidence, { latitude: 50.45, longitude: 30.52 }, 12_000);
+
+    expect(evidence.traceDistanceM).toBeCloseTo(5_000, -2);
+    expect(relocated.scaleFactor).toBeCloseTo(2.4, 1);
+    expect(traceDistance(relocated.cleanedPoints)).toBeCloseTo(12_000, -2);
+  });
+
+  it('uses heading dead reckoning when the surviving GPS trace is severely collapsed', async () => {
+    const activity = activityFixture();
+    activity.records = activity.records.map((record, index) => ({
+      ...record,
+      timestamp: new Date(Date.UTC(2024, 0, 1, 0, index * 15)).toISOString(),
+      position: { latitude: 50 + index * 0.00018, longitude: 30 },
+      trackDeg: 0,
+    }));
+    const evidence = analyzeGpsEvidence(activity);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ trip: { legs: [{ shape: MATCHED_SHAPE }] } }),
+    });
+
+    const proposal = await requestGpsMatch(
+      activity,
+      evidence,
+      fetchMock as unknown as typeof fetch,
+      undefined,
+      { latitude: 50.45, longitude: 30.52 },
+      { distanceM: 12_670, source: 'repair_consensus', estimateCount: 3 },
+    );
+    const request = JSON.parse(fetchMock.mock.calls[0][1]?.body as string) as {
+      shape: { lat: number; lon: number }[];
+    };
+    const submittedDistance = traceDistance(
+      request.shape.map((point) => ({ latitude: point.lat, longitude: point.lon })),
+    );
+
+    expect(evidence.traceDistanceM).toBeLessThan(100);
+    expect(submittedDistance).toBeCloseTo(12_670, -2);
+    expect(proposal.reconstructionMethod).toBe('heading_dead_reckoning');
+  });
+
+  it('requests road loops from the corrected start and sensor distance when GPS is unusable', async () => {
+    const activity = activityFixture();
+    const evidence = analyzeGpsEvidence(activity);
+    const start = { latitude: 50.45, longitude: 30.52 };
+    expect(hasUsableGpsShape(evidence)).toBe(true);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ trip: { legs: [{ shape: MATCHED_SHAPE }] } }),
+    });
+
+    const candidates = await requestLoopCandidates(
+      activity,
+      evidence,
+      start,
+      { distanceM: 12_670, source: 'repair_consensus' },
+      fetchMock as unknown as typeof fetch,
+    );
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(options.body as string) as {
+      locations: { lat: number; lon: number }[];
+    };
+
+    expect(url).toMatch(/\/route$/);
+    expect(body.locations).toHaveLength(4);
+    expect(body.locations[0]).toEqual({ lat: start.latitude, lon: start.longitude, type: 'break' });
+    expect(body.locations.at(-1)).toEqual(body.locations[0]);
+    expect(
+      distanceBetween(start, {
+        latitude: body.locations[1].lat,
+        longitude: body.locations[1].lon,
+      }),
+    ).toBeCloseTo(12_670 / 4, 0);
+    expect(candidates.length).toBeGreaterThanOrEqual(4);
+    expect(
+      candidates.every((candidate) => candidate.reconstructionMethod === 'generated_loop'),
+    ).toBe(true);
+    expect(candidates.every((candidate) => candidate.confidence === 'low')).toBe(true);
+    expect(candidates.every((candidate) => candidate.originalTrace.length === 0)).toBe(true);
+  });
+
   it('assigns confidence from route and recorded distance agreement', () => {
     const activity = activityFixture();
     const evidence = analyzeGpsEvidence(activity);
@@ -133,5 +239,53 @@ describe('alpha GPS repair', () => {
     expect(proposal.evidenceScores.proximity?.score).toBe(100);
     expect(proposal.evidenceScores.altitude).toBeUndefined();
     expect(proposal.evidenceScores.overall).toBeGreaterThan(95);
+  });
+
+  it('builds an independent distance consensus when sensor algorithms agree', () => {
+    const activity = activityFixture();
+    activity.session = {
+      ...activity.session,
+      totalElapsedTimeS: 100,
+      totalTimerTimeS: 100,
+      totalStrides: 165,
+    };
+    activity.records = Array.from({ length: 101 }, (_, index) => ({
+      index,
+      timestamp: new Date(Date.UTC(2024, 0, 1, 0, 0, index)).toISOString(),
+      distanceM: index * 3.3,
+      enhancedSpeedMps: 3.3,
+      cadenceRaw: 99,
+      runningCadenceSpm: 198,
+      nativeStepLengthM: 1,
+      position: { latitude: 50 + index * 0.00001, longitude: 30 },
+      developerFields: {},
+    }));
+
+    const consensus = estimateDistanceConsensus(activity);
+
+    expect(consensus?.estimateCount).toBe(3);
+    expect(consensus?.distanceM).toBeCloseTo(330, 0);
+    expect(consensus?.spreadPercent).toBeLessThan(1);
+  });
+
+  it('flags a 5 km road against a 12 km sensor estimate as low-confidence', () => {
+    const activity = activityFixture();
+    const evidence = analyzeGpsEvidence(activity);
+    const route = [
+      { latitude: 50, longitude: 30 },
+      { latitude: 50.045, longitude: 30 },
+    ];
+
+    const proposal = createGpsMatchProposal(activity, evidence, evidence.cleanedPoints, route, [], {
+      distanceM: 12_000,
+      source: 'repair_consensus',
+      estimateCount: 3,
+    });
+
+    expect(proposal.routeDistanceM).toBeCloseTo(5_000, -2);
+    expect(proposal.distanceDeltaPercent).toBeCloseTo(58.3, 1);
+    expect(proposal.distanceConflict).toBe(true);
+    expect(proposal.evidenceScores.overall).toBeLessThanOrEqual(35);
+    expect(proposal.confidence).toBe('low');
   });
 });

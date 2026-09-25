@@ -1030,6 +1030,28 @@ details summary {
 .alphaGpsResult {
   display: grid;
   gap: 13px;
+  scroll-margin-top: 82px;
+  outline: 0;
+}
+.routeReviewHeading {
+  padding: 2px 2px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.routeReviewHeading h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+}
+.routeReviewHeading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.routeReviewHeading .textButton {
+  flex: 0 0 auto;
 }
 .routeComparisonMap {
   margin: 0;
@@ -1090,6 +1112,30 @@ details summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+.routeAlternatives {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.routeAlternatives > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.routeAlternatives button {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: white;
+  font: inherit;
+  cursor: pointer;
+}
+.routeAlternatives button.selected {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 .alphaGpsVerdict > div {
   padding: 10px 12px;
@@ -1193,6 +1239,7 @@ details summary {
   background: repeating-linear-gradient(135deg, var(--wash) 0 4px, #fff 4px 8px);
 }
 .alphaGpsWarning,
+.alphaGpsConflict,
 .gpsRepairSummary {
   padding: 10px 12px;
   display: flex;
@@ -1203,6 +1250,11 @@ details summary {
   background: var(--amber-soft);
   font-size: 12px;
   line-height: 1.45;
+}
+.alphaGpsConflict {
+  color: var(--red);
+  background: #fff0ef;
+  box-shadow: inset 0 0 0 1px rgba(194, 59, 59, 0.18);
 }
 .alphaGpsActions {
   display: flex;
@@ -1925,6 +1977,10 @@ details summary {
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 8px 14px;
+  }
+  .routeReviewHeading {
+    flex-direction: column;
+    gap: 8px;
   }
   .routeComparisonMap figcaption strong {
     width: 100%;

@@ -137,12 +137,33 @@ const en: Record<string, string> = {
   'alphaGps.error': 'The route could not be matched.',
   'alphaGps.originalTrace': 'Recorded trace',
   'alphaGps.shiftedTrace': 'Shifted trace',
+  'alphaGps.distanceAdjustedTrace': 'Distance-adjusted trace',
+  'alphaGps.headingGuide': 'Heading-derived guide',
+  'alphaGps.noTrace': 'No reliable GPS trace',
+  'alphaGps.reviewBodyLoop':
+    'Only the start at {latitude}, {longitude} and the {distance} km sensor estimate are known. These road loops are possibilities, not a recovered path.',
+  'alphaGps.alternatives': 'Possible road loops near the start',
+  'alphaGps.loopOption': 'Option {number} · {distance} km',
+  'alphaGps.needsDistance': 'A reliable sensor distance is required to generate road loops.',
+  'alphaGps.findLoops': 'Find possible road loops',
+  'alphaGps.externalBodyLoop':
+    'The GPS positions are too damaged to locate the route. Only the selected start and generated loop anchors are sent to Valhalla; the FIT file stays local.',
   'alphaGps.matchedRoute': 'Suggested route',
   'alphaGps.reconstructedStart': 'Reconstructed start',
   'alphaGps.reconstructedEnd': 'Reconstructed end',
+  'alphaGps.reviewTitle': 'Review the reconstructed road',
+  'alphaGps.reviewBody': 'Built around your corrected start at {latitude}, {longitude}.',
+  'alphaGps.reviewBodyScaled':
+    'Built at {latitude}, {longitude}. The surviving trace was scaled {scale}× toward the independent {distance} km sensor estimate before road matching.',
+  'alphaGps.reviewBodyHeading':
+    'Built at {latitude}, {longitude}. Because the GPS trace was severely collapsed, a {distance} km guide was reconstructed from heading and track records before road matching.',
+  'alphaGps.changeStart': 'Change start location',
   'alphaGps.confidence': 'Combined confidence',
   'alphaGps.routeDistance': 'Suggested route',
   'alphaGps.distanceDifference': 'Distance difference',
+  'alphaGps.distanceDifferenceEstimate': 'Difference from {distance} km sensor estimate',
+  'alphaGps.distanceConflict':
+    'Distance conflict: the matched road is {route} km, but the independent sensor estimate is {reference} km ({difference}% difference). The GPS shape may be incomplete, so this is not a credible full-route reconstruction.',
   'alphaGps.notOriginal':
     'This is a plausible route generated from map data. It is not proof of the original path.',
   'alphaGps.evidenceTitle': 'Why this route fits',
@@ -375,12 +396,33 @@ const uk: Record<string, string> = {
   'alphaGps.error': 'Не вдалося зіставити маршрут.',
   'alphaGps.originalTrace': 'Записаний трек',
   'alphaGps.shiftedTrace': 'Зміщений трек',
+  'alphaGps.distanceAdjustedTrace': 'Трек із виправленою дистанцією',
+  'alphaGps.headingGuide': 'Орієнтир за напрямком руху',
+  'alphaGps.noTrace': 'Немає надійного GPS-треку',
+  'alphaGps.reviewBodyLoop':
+    'Відомі лише старт {latitude}, {longitude} та оцінка датчиків {distance} км. Ці дорожні петлі — можливі варіанти, а не відновлений справжній шлях.',
+  'alphaGps.alternatives': 'Можливі дорожні петлі поблизу старту',
+  'alphaGps.loopOption': 'Варіант {number} · {distance} км',
+  'alphaGps.needsDistance': 'Для побудови дорожніх петель потрібна надійна оцінка дистанції.',
+  'alphaGps.findLoops': 'Знайти можливі дорожні петлі',
+  'alphaGps.externalBodyLoop':
+    'GPS-позиції надто пошкоджені, щоб визначити шлях. До Valhalla надсилаються лише вибраний старт і згенеровані орієнтири петель; FIT-файл залишається локальним.',
   'alphaGps.matchedRoute': 'Запропонований маршрут',
   'alphaGps.reconstructedStart': 'Відновлений старт',
   'alphaGps.reconstructedEnd': 'Відновлений фініш',
+  'alphaGps.reviewTitle': 'Перевірте відновлений маршрут',
+  'alphaGps.reviewBody': 'Побудовано навколо правильного старту {latitude}, {longitude}.',
+  'alphaGps.reviewBodyScaled':
+    'Побудовано від {latitude}, {longitude}. Перед зіставленням із дорогами збережений трек масштабовано у {scale} раза до незалежної оцінки датчиків {distance} км.',
+  'alphaGps.reviewBodyHeading':
+    'Побудовано від {latitude}, {longitude}. Оскільки GPS-трек сильно стиснений, перед зіставленням із дорогами орієнтир на {distance} км відновлено з даних heading і track.',
+  'alphaGps.changeStart': 'Змінити місце старту',
   'alphaGps.confidence': 'Сукупна достовірність',
   'alphaGps.routeDistance': 'Запропонований маршрут',
   'alphaGps.distanceDifference': 'Різниця дистанції',
+  'alphaGps.distanceDifferenceEstimate': 'Різниця з оцінкою датчиків {distance} км',
+  'alphaGps.distanceConflict':
+    'Конфлікт дистанції: зіставлений маршрут має {route} км, а незалежна оцінка датчиків — {reference} км (різниця {difference}%). GPS-трек може бути неповним, тому це не достовірне відновлення всього маршруту.',
   'alphaGps.notOriginal':
     'Це правдоподібний маршрут, створений із картографічних даних. Він не доводить, яким був початковий шлях.',
   'alphaGps.evidenceTitle': 'Чому цей маршрут підходить',

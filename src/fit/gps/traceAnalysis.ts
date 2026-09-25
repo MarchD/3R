@@ -1,6 +1,12 @@
 import type { NormalizedActivity, NormalizedRecord } from '../../models/fit';
 import { scoreGpsMatch } from './matchScoring';
-import type { GeoPoint, GpsEvidence, GpsMatchProposal, GpsTracePoint } from './types';
+import type {
+  DistanceReference,
+  GeoPoint,
+  GpsEvidence,
+  GpsMatchProposal,
+  GpsTracePoint,
+} from './types';
 
 const EARTH_RADIUS_M = 6_371_000;
 const MAX_MATCH_POINTS = 180;
@@ -62,6 +68,20 @@ function runningSpeedLimit(activity: NormalizedActivity): number {
   return 60;
 }
 
+export function traceDistance(points: GeoPoint[]): number {
+  return points
+    .slice(1)
+    .reduce((total, point, index) => total + distanceBetween(points[index], point), 0);
+}
+
+export function hasUsableGpsShape(evidence: GpsEvidence): boolean {
+  return (
+    evidence.cleanedPoints.length >= 2 &&
+    (evidence.sourcePoints.length < 20 ||
+      evidence.cleanedPoints.length / evidence.sourcePoints.length >= 0.25)
+  );
+}
+
 export function analyzeGpsEvidence(activity: NormalizedActivity): GpsEvidence {
   const sourcePoints = activity.records.flatMap((record) => {
     const point = validPosition(record);
@@ -79,6 +99,8 @@ export function analyzeGpsEvidence(activity: NormalizedActivity): GpsEvidence {
         (record) => record.enhancedAltitudeM != null || record.altitudeM != null,
       ).length,
       accuracyRecords: activity.records.filter((record) => record.gpsAccuracy != null).length,
+      traceDistanceM: traceDistance(sourcePoints),
+      scaleFactor: 1,
     };
   }
 
@@ -102,6 +124,8 @@ export function analyzeGpsEvidence(activity: NormalizedActivity): GpsEvidence {
       (record) => record.enhancedAltitudeM != null || record.altitudeM != null,
     ).length,
     accuracyRecords: activity.records.filter((record) => record.gpsAccuracy != null).length,
+    traceDistanceM: traceDistance(cleanedPoints),
+    scaleFactor: 1,
   };
 }
 
@@ -117,28 +141,62 @@ function wrappedLongitude(longitude: number): number {
   return ((((longitude + 180) % 360) + 360) % 360) - 180;
 }
 
-export function relocateGpsEvidence(evidence: GpsEvidence, start: GeoPoint): GpsEvidence {
+export function destinationPoint(start: GeoPoint, bearingDeg: number, distanceM: number): GeoPoint {
+  const angularDistance = distanceM / EARTH_RADIUS_M;
+  const bearing = radians(bearingDeg);
+  const latitude = radians(start.latitude);
+  const longitude = radians(start.longitude);
+  const destinationLatitude = Math.asin(
+    Math.sin(latitude) * Math.cos(angularDistance) +
+      Math.cos(latitude) * Math.sin(angularDistance) * Math.cos(bearing),
+  );
+  const destinationLongitude =
+    longitude +
+    Math.atan2(
+      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latitude),
+      Math.cos(angularDistance) - Math.sin(latitude) * Math.sin(destinationLatitude),
+    );
+  return {
+    latitude: (destinationLatitude * 180) / Math.PI,
+    longitude: wrappedLongitude((destinationLongitude * 180) / Math.PI),
+  };
+}
+
+export function relocateGpsEvidence(
+  evidence: GpsEvidence,
+  start: GeoPoint,
+  targetDistanceM?: number,
+): GpsEvidence {
   const recordedStart = evidence.sourcePoints[0];
   if (!recordedStart) return evidence;
-  const latitudeDelta = start.latitude - recordedStart.latitude;
   const sourceLongitudeScale = Math.cos(radians(recordedStart.latitude));
   const targetLongitudeScale = Math.cos(radians(start.latitude));
   const longitudeScale =
     Math.abs(targetLongitudeScale) > 0.001 ? sourceLongitudeScale / targetLongitudeScale : 1;
+  const requestedScale =
+    targetDistanceM != null && evidence.traceDistanceM > 0
+      ? targetDistanceM / evidence.traceDistanceM
+      : 1;
+  const scaleFactor = Math.max(0.25, Math.min(4, requestedScale));
   const translate = (point: GpsTracePoint): GpsTracePoint =>
     point.recordIndex === recordedStart.recordIndex
       ? { ...point, ...start }
       : {
           ...point,
-          latitude: Math.max(-90, Math.min(90, point.latitude + latitudeDelta)),
+          latitude: Math.max(
+            -90,
+            Math.min(90, start.latitude + (point.latitude - recordedStart.latitude) * scaleFactor),
+          ),
           longitude: wrappedLongitude(
-            start.longitude + (point.longitude - recordedStart.longitude) * longitudeScale,
+            start.longitude +
+              (point.longitude - recordedStart.longitude) * longitudeScale * scaleFactor,
           ),
         };
   return {
     ...evidence,
     sourcePoints: evidence.sourcePoints.map(translate),
     cleanedPoints: evidence.cleanedPoints.map(translate),
+    scaleFactor,
   };
 }
 
@@ -203,22 +261,82 @@ function recordProgresses(records: NormalizedRecord[]): number[] {
   return records.map((_, index) => (records.length > 1 ? index / (records.length - 1) : 0));
 }
 
+function validHeading(record: NormalizedRecord): number | undefined {
+  const heading = record.trackDeg ?? record.headingDeg;
+  return heading != null && Number.isFinite(heading) ? ((heading % 360) + 360) % 360 : undefined;
+}
+
+export function hasUsableHeading(activity: NormalizedActivity): boolean {
+  return (
+    activity.records.length >= 2 &&
+    activity.records.filter((record) => validHeading(record) != null).length /
+      activity.records.length >=
+      0.6
+  );
+}
+
+export function buildHeadingGuide(
+  activity: NormalizedActivity,
+  start: GeoPoint,
+  targetDistanceM: number,
+  distanceProgresses?: number[],
+): GpsTracePoint[] {
+  if (activity.records.length < 2 || targetDistanceM <= 0) return [];
+  const headings = activity.records.map(validHeading);
+  if (!hasUsableHeading(activity)) return [];
+  const initialHeading = headings.find((heading) => heading != null);
+  if (initialHeading == null) return [];
+  let currentHeading: number = initialHeading;
+  const progresses =
+    distanceProgresses?.length === activity.records.length
+      ? distanceProgresses
+      : recordProgresses(activity.records);
+  let currentPosition = start;
+  const guide = activity.records.map((record, index): GpsTracePoint => {
+    if (index > 0) {
+      currentHeading = headings[index - 1] ?? headings[index] ?? currentHeading;
+      const segmentDistance =
+        targetDistanceM * Math.max(0, progresses[index] - progresses[index - 1]);
+      currentPosition = destinationPoint(currentPosition, currentHeading, segmentDistance);
+    }
+    return {
+      ...currentPosition,
+      recordIndex: record.index,
+      timestamp: record.timestamp,
+      distanceM: targetDistanceM * progresses[index],
+      gpsAccuracy: record.gpsAccuracy,
+    };
+  });
+  return guide;
+}
+
 export function createGpsMatchProposal(
   activity: NormalizedActivity,
   evidence: GpsEvidence,
   submittedPoints: GpsTracePoint[],
   matchedRoute: GeoPoint[],
   routeElevations: number[] = [],
+  distanceReference?: DistanceReference,
+  reconstructionMethod: GpsMatchProposal['reconstructionMethod'] = 'trace_match',
 ): GpsMatchProposal {
   if (matchedRoute.length < 2) throw new Error('The map matcher did not return a usable route.');
   const distances = cumulativeDistances(matchedRoute);
   const routeDistanceM = distances.at(-1)!;
   const recordedDistanceM = activity.session?.totalDistanceM;
+  const referenceDistanceM = distanceReference?.distanceM ?? recordedDistanceM;
   const distanceDeltaPercent =
-    recordedDistanceM && recordedDistanceM > 0
-      ? (Math.abs(routeDistanceM - recordedDistanceM) / recordedDistanceM) * 100
+    referenceDistanceM && referenceDistanceM > 0
+      ? (Math.abs(routeDistanceM - referenceDistanceM) / referenceDistanceM) * 100
       : undefined;
-  const progresses = recordProgresses(activity.records);
+  const effectiveDistanceReference =
+    distanceReference ??
+    (recordedDistanceM
+      ? { distanceM: recordedDistanceM, source: 'recorded_session' as const }
+      : undefined);
+  const progresses =
+    distanceReference?.recordProgresses?.length === activity.records.length
+      ? distanceReference.recordProgresses
+      : recordProgresses(activity.records);
   const positionPatches = activity.records.map((record, index) => ({
     recordIndex: record.index,
     ...pointAlongRoute(matchedRoute, distances, progresses[index]),
@@ -231,12 +349,16 @@ export function createGpsMatchProposal(
     distanceDeltaPercent,
     routeElevations,
   );
+  if (reconstructionMethod === 'generated_loop') {
+    evidenceScores.overall = Math.min(evidenceScores.overall, 49);
+  }
   let confidence: GpsMatchProposal['confidence'] = 'low';
   if (evidenceScores.overall >= 75) confidence = 'high';
   else if (evidenceScores.overall >= 50) confidence = 'medium';
   return {
+    candidateId: reconstructionMethod,
     provider: 'Valhalla / OpenStreetMap',
-    originalTrace: evidence.sourcePoints,
+    originalTrace: evidence.cleanedPoints,
     recordedStart: evidence.sourcePoints[0],
     correctedStart: submittedPoints[0],
     matchedRoute,
@@ -246,7 +368,11 @@ export function createGpsMatchProposal(
     rejectedPointCount: evidence.rejectedPoints,
     routeDistanceM,
     recordedDistanceM,
+    distanceReference: effectiveDistanceReference,
     distanceDeltaPercent,
+    distanceConflict: distanceDeltaPercent != null && distanceDeltaPercent > 35,
+    traceScaleFactor: evidence.scaleFactor,
+    reconstructionMethod,
     evidenceScores,
     confidence,
   };

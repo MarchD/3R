@@ -7,8 +7,16 @@ import { createRepairCandidates } from '../fit/repair/createRepairCandidates';
 import { parsedFixture } from './fixtures';
 import { LanguageProvider } from '../i18n/LanguageContext';
 
+vi.mock('../components/AlphaGpsRepair/RouteComparisonMap', () => ({
+  RouteComparisonMap: ({ matchedLabel }: { matchedLabel: string }) => (
+    <div role="img" aria-label={matchedLabel} />
+  ),
+}));
+
 let repairRequests = 0;
 let workerParsedResult = parsedFixture();
+const MATCHED_SHAPE =
+  'cfff_Bu~~ey@`AvAx@iBvByEx@cBkEsGiNsSmEuGaFmHaHgKoAiBeCyD_AwAYMWR]t@}V{_@qDuFyBgDeEqGf@gAn@uAlAkC';
 
 function renderApp() {
   return render(
@@ -197,5 +205,78 @@ describe('complete local analysis and repair flow', () => {
 
     expect(await screen.findByRole('heading', { name: 'GPS repair lab' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send trace and find route' })).toBeEnabled();
+  });
+
+  it('replaces the start editor with a dedicated route review after matching', async () => {
+    window.history.replaceState({}, '', '/?version=alpha');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ trip: { legs: [{ shape: MATCHED_SHAPE }] } }),
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp();
+    const file = new File([new Uint8Array([1])], 'gps.fit', {
+      type: 'application/octet-stream',
+      lastModified: 5,
+    });
+    await user.upload(screen.getByLabelText('Choose FIT files'), file);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Where did the activity really start?' }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Send trace and find route' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Review the reconstructed road' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Where did the activity really start?' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Suggested route' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Change start location' })).toBeInTheDocument();
+  });
+
+  it('offers road loop alternatives when GPS is damaged and only the start is known', async () => {
+    window.history.replaceState({}, '', '/?version=alpha');
+    workerParsedResult = parsedFixture();
+    workerParsedResult.normalized.session = {
+      ...workerParsedResult.normalized.session,
+      totalElapsedTimeS: 100,
+      totalTimerTimeS: 100,
+      totalStrides: 165,
+    };
+    workerParsedResult.normalized.records = Array.from({ length: 101 }, (_, index) => ({
+      ...workerParsedResult.normalized.records[0],
+      index,
+      timestamp: new Date(Date.UTC(2024, 0, 1, 0, 0, index)).toISOString(),
+      distanceM: index * 3.3,
+      enhancedSpeedMps: 3.3,
+      nativeStepLengthM: 1,
+      position: { latitude: 50 + index * 0.01, longitude: 30 },
+    }));
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ trip: { legs: [{ shape: MATCHED_SHAPE }] } }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderApp();
+    await user.upload(
+      screen.getByLabelText('Choose FIT files'),
+      new File([new Uint8Array([1])], 'damaged.fit'),
+    );
+
+    const findLoops = await screen.findByRole('button', { name: 'Find possible road loops' });
+    await user.click(findLoops);
+
+    expect(await screen.findByText('Possible road loops near the start')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Option \d+ ·/ }).length).toBeGreaterThanOrEqual(
+      4,
+    );
+    expect(fetchMock).toHaveBeenCalled();
+    expect(fetchMock.mock.calls[0][0] as string).toMatch(/\/route$/);
   });
 });

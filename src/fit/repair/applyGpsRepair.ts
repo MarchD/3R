@@ -13,19 +13,34 @@ export function applyGpsRepair(
 ): { patch: RepairPatch; repairedActivity: RepairedActivity } {
   const correction = resolveTimestampCorrection(original.session?.startTime, correctedStartTime);
   const summary = activitySummary(original);
+  const { distanceReference } = proposal;
+  const recordPatches =
+    distanceReference?.source === 'repair_consensus' &&
+    distanceReference.recordPatches?.length === original.records.length
+      ? distanceReference.recordPatches
+      : [];
+  const repairedDistanceM = recordPatches.length ? distanceReference?.distanceM : undefined;
   const patch: RepairPatch = {
     sourceFileName,
     createdAt,
     algorithm: 'gps_map_match',
     originalSummary: summary,
-    repairedSummary: { ...summary },
-    recordPatches: [],
+    repairedSummary: {
+      ...summary,
+      totalDistanceM: repairedDistanceM ?? summary.totalDistanceM,
+      averagePaceSPerKm:
+        repairedDistanceM && original.session?.totalElapsedTimeS
+          ? (original.session.totalElapsedTimeS * 1000) / repairedDistanceM
+          : summary.averagePaceSPerKm,
+    },
+    recordPatches: recordPatches.map((record) => ({ ...record })),
     positionPatches: proposal.positionPatches.map((position) => ({ ...position })),
     timestampOffsetMs: correction.timestampOffsetMs || undefined,
     originalStartTime: correction.originalStartTime,
     correctedStartTime: correction.correctedStartTime,
     assumptions: [
       'The selected OpenStreetMap route is a plausible reconstruction, not the original GPS trace.',
+      ...(repairedDistanceM ? ['Distance was derived from the independent sensor consensus.'] : []),
       ...(correction.correctedStartTime
         ? ['Every absolute FIT timestamp is shifted by the same offset.']
         : []),
@@ -37,6 +52,7 @@ export function applyGpsRepair(
   const positions = new Map(
     proposal.positionPatches.map((position) => [position.recordIndex, position]),
   );
+  const distances = new Map(recordPatches.map((record) => [record.recordIndex, record]));
   const repairedActivity: RepairedActivity = {
     ...original,
     metadata: {
@@ -47,6 +63,11 @@ export function applyGpsRepair(
       ? {
           ...original.session,
           startTime: shiftTimestamp(original.session.startTime, correction.timestampOffsetMs),
+          totalDistanceM: repairedDistanceM ?? original.session.totalDistanceM,
+          avgSpeedMps:
+            repairedDistanceM && original.session.totalTimerTimeS
+              ? repairedDistanceM / original.session.totalTimerTimeS
+              : original.session.avgSpeedMps,
         }
       : undefined,
     laps: original.laps.map((lap) => ({
@@ -55,9 +76,13 @@ export function applyGpsRepair(
     })),
     records: original.records.map((record) => {
       const position = positions.get(record.index);
+      const distance = distances.get(record.index);
       return {
         ...record,
         timestamp: shiftTimestamp(record.timestamp, correction.timestampOffsetMs),
+        distanceM: distance?.distanceM ?? record.distanceM,
+        speedMps: distance?.derivedSpeedMps ?? record.speedMps,
+        enhancedSpeedMps: distance?.derivedSpeedMps ?? record.enhancedSpeedMps,
         position: position
           ? { latitude: position.latitude, longitude: position.longitude }
           : record.position,
