@@ -3,6 +3,7 @@
   color: var(--ink);
   background: #edf2f8;
   font-synthesis: none;
+  color-scheme: light;
   --ink: #17243a;
   --muted: #66738a;
   --line: #d5deea;
@@ -20,6 +21,7 @@
 }
 
 [data-theme='dark'] {
+  color-scheme: dark;
   --ink: #d8e1ee;
   --muted: #8b9ab0;
   --line: #2d3b52;
@@ -1326,7 +1328,12 @@ details summary {
   padding: 9px 10px;
   border: 1px solid var(--line);
   border-radius: 7px;
+  background: var(--wash);
+  color: var(--ink);
   font: inherit;
+}
+.startTimeEditor input:focus-visible {
+  border-color: var(--blue);
 }
 .startTimeEditor .timeOffset {
   color: var(--blue);
