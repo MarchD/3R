@@ -349,7 +349,7 @@ export function createGpsMatchProposal(
     distanceDeltaPercent,
     routeElevations,
   );
-  if (reconstructionMethod === 'generated_loop') {
+  if (reconstructionMethod === 'generated_loop' || reconstructionMethod === 'manual_route') {
     evidenceScores.overall = Math.min(evidenceScores.overall, 49);
   }
   let confidence: GpsMatchProposal['confidence'] = 'low';

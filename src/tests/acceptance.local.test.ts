@@ -12,6 +12,7 @@ import {
 import { estimateDistanceConsensus } from '../fit/repair/distanceConsensus';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
 import { applyGpsRepair } from '../fit/repair/applyGpsRepair';
+import { createGpsTraceDistanceProposal } from '../fit/gps/gpsTraceDistance';
 import { createRepairCandidates } from '../fit/repair/createRepairCandidates';
 
 const fixturePath = process.env.FIT_FIXTURE;
@@ -99,5 +100,46 @@ describe.runIf(Boolean(fixturePath))('provided damaged FIT fixture', () => {
     const gpsDecoder = new Decoder(Stream.fromArrayBuffer(gpsExportBuffer));
     expect(gpsDecoder.checkIntegrity()).toBe(true);
     expect(gpsDecoder.read().messages.sessionMesgs?.[0]?.totalDistance).toBeCloseTo(12_669, 0);
+  });
+});
+
+const gpsLapFixturePath = process.env.GPS_LAP_FIXTURE;
+
+describe.runIf(Boolean(gpsLapFixturePath))('recorded GPS lap rebuilding fixture', () => {
+  it('rebuilds automatic kilometre laps to match the repaired GPS distance', () => {
+    const bytes = readFileSync(gpsLapFixturePath!);
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    const parsed = parseFitBuffer(buffer, {
+      name: 'gps-laps.fit',
+      size: bytes.byteLength,
+      lastModified: 0,
+    });
+    const evidence = analyzeGpsEvidence(parsed.normalized);
+    const proposal = createGpsTraceDistanceProposal(parsed.normalized, evidence);
+    const { patch, repairedActivity } = applyGpsRepair('gps-laps.fit', parsed.normalized, proposal);
+
+    expect(parsed.normalized.laps).toHaveLength(18);
+    expect(patch.replacementLaps).toHaveLength(15);
+    expect(repairedActivity.laps).toHaveLength(15);
+    expect(repairedActivity.laps.slice(0, -1).every((lap) => lap.totalDistanceM === 1000)).toBe(
+      true,
+    );
+    expect(repairedActivity.laps.at(-1)?.totalDistanceM).toBeCloseTo(65.06, 0);
+
+    const exported = encodeRepairedFit(buffer, patch);
+    const exportedBuffer = exported.bytes.buffer.slice(
+      exported.bytes.byteOffset,
+      exported.bytes.byteOffset + exported.bytes.byteLength,
+    );
+    const decoded = new Decoder(Stream.fromArrayBuffer(exportedBuffer)).read();
+    const laps = decoded.messages.lapMesgs ?? [];
+    expect(laps).toHaveLength(15);
+    expect(decoded.messages.sessionMesgs?.[0]?.numLaps).toBe(15);
+    expect(laps.reduce((sum, lap) => sum + (lap.totalDistance ?? 0), 0)).toBeCloseTo(
+      proposal.routeDistanceM,
+      0,
+    );
+    expect(laps.every((lap) => lap.timestamp > lap.startTime)).toBe(true);
+    expect(decoded.messages.sessionMesgs?.[0]?.timestamp).toEqual(laps.at(-1)?.timestamp);
   });
 });

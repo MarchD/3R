@@ -1,23 +1,20 @@
-import { Clock3 } from 'lucide-react';
+import { CheckCircle2, Clock3 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { formatZonedInput, parseZonedInput, resolveTimeZone } from '../../fit/repair/zonedDateTime';
+import {
+  countriesWithTimeZones,
+  countryForTimeZone,
+  isUnavailableCountry,
+  isUnavailableTimeZone,
+  timeZonesForCountry,
+} from '../../fit/repair/countryTimeZones';
 import type { ParsedFitFile } from '../../models/fit';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { CustomDropdown } from './CustomDropdown';
 
 interface Props {
   result: ParsedFitFile;
   onChange: (correctedStartTime: string | undefined) => void;
-}
-
-function toLocalInputValue(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (!Number.isFinite(date.getTime())) return '';
-  const localTime = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
-  return localTime.toISOString().slice(0, 16);
-}
-
-function toIsoTimestamp(localValue: string): string | undefined {
-  const date = new Date(localValue);
-  return Number.isFinite(date.getTime()) ? date.toISOString() : undefined;
 }
 
 function describeOffset(offsetMs: number): string {
@@ -34,18 +31,60 @@ export function StartTimeRepair({ result, onChange }: Props) {
   const originalStartTime = result.normalized.session?.startTime;
   const originalStartMs = originalStartTime ? Date.parse(originalStartTime) : NaN;
   const validOriginalStartTime = Number.isFinite(originalStartMs) ? originalStartTime : undefined;
-  const [enabled, setEnabled] = useState(false);
   const [correctedLocalTime, setCorrectedLocalTime] = useState('');
+  const browserTimeZone =
+    resolveTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC') ?? 'UTC';
+  const browserCountryCandidate = countryForTimeZone(browserTimeZone) ?? '';
+  const browserCountry = isUnavailableCountry(browserCountryCandidate)
+    ? ''
+    : browserCountryCandidate;
+  const defaultZones = timeZonesForCountry(browserCountry).filter(
+    (zone) => resolveTimeZone(zone) != null && !isUnavailableTimeZone(zone),
+  );
+  let defaultTimeZone = '';
+  if (browserCountry) {
+    defaultTimeZone = defaultZones.includes(browserTimeZone)
+      ? browserTimeZone
+      : (defaultZones[0] ?? '');
+  }
+  const [country, setCountry] = useState(browserCountry);
+  const [timeZoneInput, setTimeZoneInput] = useState(defaultTimeZone);
+  const countries = useMemo(() => {
+    const displayNames = new Intl.DisplayNames([language], { type: 'region' });
+    return countriesWithTimeZones()
+      .map((code) => ({ code, name: displayNames.of(code) ?? code }))
+      .sort((first, second) => first.name.localeCompare(second.name, language));
+  }, [language]);
+  const zones = useMemo(
+    () => timeZonesForCountry(country).filter((zone) => resolveTimeZone(zone) != null),
+    [country],
+  );
+  const timeZone =
+    zones.includes(timeZoneInput) && !isUnavailableTimeZone(timeZoneInput)
+      ? timeZoneInput
+      : undefined;
 
   useEffect(() => {
-    setEnabled(false);
-    setCorrectedLocalTime(validOriginalStartTime ? toLocalInputValue(validOriginalStartTime) : '');
+    setCountry(browserCountry);
+    setTimeZoneInput(defaultTimeZone);
+    setCorrectedLocalTime(
+      validOriginalStartTime
+        ? formatZonedInput(validOriginalStartTime, defaultTimeZone || browserTimeZone)
+        : '',
+    );
     onChange(undefined);
-  }, [validOriginalStartTime, onChange, result.file.name]);
+  }, [
+    validOriginalStartTime,
+    onChange,
+    result.file.name,
+    browserTimeZone,
+    browserCountry,
+    defaultTimeZone,
+  ]);
 
   const correctedStartTime = useMemo(
-    () => toIsoTimestamp(correctedLocalTime),
-    [correctedLocalTime],
+    () => (timeZone ? parseZonedInput(correctedLocalTime, timeZone) : undefined),
+    [correctedLocalTime, timeZone],
   );
   const offsetMs = correctedStartTime ? Date.parse(correctedStartTime) - originalStartMs : 0;
   const canApply = Boolean(correctedStartTime && validOriginalStartTime && offsetMs !== 0);
@@ -58,58 +97,101 @@ export function StartTimeRepair({ result, onChange }: Props) {
           <p>{t('repair.optionsBody')}</p>
         </div>
       </div>
-      <label className="repairOption" htmlFor="repair-start-time">
-        <input
-          id="repair-start-time"
-          type="checkbox"
-          checked={enabled}
-          disabled={!validOriginalStartTime}
-          onChange={(event) => {
-            const nextEnabled = event.target.checked;
-            setEnabled(nextEnabled);
-            onChange(nextEnabled && canApply ? correctedStartTime : undefined);
-          }}
-        />
+      <div className="repairOption">
         <span>
-          <strong>{t('repair.startTimeWrong')}</strong>
+          <strong>{t('repair.startTimeSection')}</strong>
           <small>
             {validOriginalStartTime
               ? t('repair.startTimeCurrent', {
                   time: new Date(validOriginalStartTime).toLocaleString(
                     language === 'uk' ? 'uk-UA' : 'en-US',
+                    timeZone ? { timeZone } : undefined,
                   ),
                 })
               : t('repair.startTimeMissing')}
           </small>
         </span>
-      </label>
-      {enabled && validOriginalStartTime && (
-        <div className="startTimeEditor">
-          <label htmlFor="corrected-start-time">{t('repair.startTimeCorrected')}</label>
-          <input
-            id="corrected-start-time"
-            type="datetime-local"
-            value={correctedLocalTime}
-            onChange={(event) => {
-              const nextLocalTime = event.target.value;
-              const nextStartTime = toIsoTimestamp(nextLocalTime);
-              setCorrectedLocalTime(nextLocalTime);
-              onChange(
-                nextStartTime && Date.parse(nextStartTime) !== originalStartMs
-                  ? nextStartTime
-                  : undefined,
-              );
-            }}
-          />
-          <p>{t('repair.startTimeHelp')}</p>
-          {canApply && (
-            <p className="timeOffset">
-              {t('repair.timeOffset', { offset: describeOffset(offsetMs) })}
-            </p>
-          )}
-          <p>{t('repair.timeAppliedTogether')}</p>
-        </div>
-      )}
+        {canApply && (
+          <span className="timeChangedNote" role="status">
+            <CheckCircle2 size={15} aria-hidden="true" /> {t('repair.startTimeChanged')}
+          </span>
+        )}
+      </div>
+      <div className="startTimeEditor">
+        <CustomDropdown
+          label={t('repair.country')}
+          value={country}
+          placeholder={t('repair.chooseCountry')}
+          searchPlaceholder={t('repair.searchOptions')}
+          unavailableLabel={t('repair.unavailableOption')}
+          emptyLabel={t('repair.noOptions')}
+          disabled={!validOriginalStartTime}
+          options={countries.map((item) => ({
+            value: item.code,
+            label: item.name,
+            disabled: isUnavailableCountry(item.code),
+          }))}
+          onChange={(nextCountry) => {
+            if (isUnavailableCountry(nextCountry)) return;
+            const nextZones = timeZonesForCountry(nextCountry).filter(
+              (zone) => resolveTimeZone(zone) != null && !isUnavailableTimeZone(zone),
+            );
+            const nextZone = nextZones.includes(timeZoneInput) ? timeZoneInput : nextZones[0];
+            setCountry(nextCountry);
+            setTimeZoneInput(nextZone ?? '');
+            const nextTime = nextZone ? parseZonedInput(correctedLocalTime, nextZone) : undefined;
+            onChange(nextTime && Date.parse(nextTime) !== originalStartMs ? nextTime : undefined);
+          }}
+        />
+        <CustomDropdown
+          label={t('repair.timeZone')}
+          value={timeZoneInput}
+          placeholder={t('repair.chooseTimeZone')}
+          searchPlaceholder={t('repair.searchOptions')}
+          unavailableLabel={t('repair.unavailableOption')}
+          emptyLabel={t('repair.noOptions')}
+          disabled={!country || !validOriginalStartTime}
+          options={zones.map((zone) => ({
+            value: zone,
+            label: zone,
+            disabled: isUnavailableTimeZone(zone),
+          }))}
+          onChange={(nextInput) => {
+            if (isUnavailableTimeZone(nextInput)) return;
+            setTimeZoneInput(nextInput);
+            const nextTime = parseZonedInput(correctedLocalTime, nextInput);
+            onChange(nextTime && Date.parse(nextTime) !== originalStartMs ? nextTime : undefined);
+          }}
+        />
+        <p>{t('repair.timeZoneHelp')}</p>
+        <label htmlFor="corrected-start-time">{t('repair.startTimeCorrected')}</label>
+        <input
+          id="corrected-start-time"
+          type="datetime-local"
+          step="1"
+          disabled={!validOriginalStartTime}
+          value={correctedLocalTime}
+          onChange={(event) => {
+            const nextLocalTime = event.target.value;
+            const nextStartTime = timeZone ? parseZonedInput(nextLocalTime, timeZone) : undefined;
+            setCorrectedLocalTime(nextLocalTime);
+            onChange(
+              nextStartTime && Date.parse(nextStartTime) !== originalStartMs
+                ? nextStartTime
+                : undefined,
+            );
+          }}
+        />
+        <p>{t('repair.startTimeHelp')}</p>
+        {timeZone && correctedLocalTime && !correctedStartTime && (
+          <p role="alert">{t('repair.timeInvalidInZone')}</p>
+        )}
+        {canApply && (
+          <p className="timeOffset">
+            {t('repair.timeOffset', { offset: describeOffset(offsetMs) })}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

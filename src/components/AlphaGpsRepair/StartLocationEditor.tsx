@@ -9,6 +9,7 @@ interface Props {
   recordedStart: GeoPoint;
   selectedStart: GeoPoint;
   onChange: (point: GeoPoint) => void;
+  compact?: boolean;
 }
 
 function coordinate(value: number): string {
@@ -24,7 +25,12 @@ function validPoint(latitude: number, longitude: number): boolean {
   );
 }
 
-export function StartLocationEditor({ recordedStart, selectedStart, onChange }: Props) {
+export function StartLocationEditor({
+  recordedStart,
+  selectedStart,
+  onChange,
+  compact = false,
+}: Props) {
   const { language, t } = useLanguage();
   const [query, setQuery] = useState('');
   const [latitude, setLatitude] = useState(coordinate(selectedStart.latitude));
@@ -72,12 +78,15 @@ export function StartLocationEditor({ recordedStart, selectedStart, onChange }: 
   };
 
   return (
-    <section className="startLocationEditor" aria-labelledby="start-location-title">
+    <section
+      className={`startLocationEditor ${compact ? 'compact' : ''}`}
+      aria-labelledby="start-location-title"
+    >
       <div className="startLocationHeading">
         <div>
-          <span className="sectionEyebrow">{t('alphaGps.startStep')}</span>
+          {!compact && <span className="sectionEyebrow">{t('alphaGps.startStep')}</span>}
           <h3 id="start-location-title">{t('alphaGps.startTitle')}</h3>
-          <p>{t('alphaGps.startBody')}</p>
+          {!compact && <p>{t('alphaGps.startBody')}</p>}
         </div>
         <button type="button" className="textButton" onClick={() => onChange(recordedStart)}>
           <LocateFixed size={14} /> {t('alphaGps.useRecorded')}
@@ -137,18 +146,22 @@ export function StartLocationEditor({ recordedStart, selectedStart, onChange }: 
         </button>
       </div>
 
-      <StartLocationMap
-        recordedStart={recordedStart}
-        selectedStart={selectedStart}
-        recordedLabel={t('alphaGps.recordedStart')}
-        selectedLabel={t('alphaGps.correctedStart')}
-        onChange={onChange}
-      />
-      <div className="startMapLegend">
-        <span className="recorded">{t('alphaGps.recordedStart')}</span>
-        <span className="selected">{t('alphaGps.correctedStart')}</span>
-        <em>{t('alphaGps.mapHint')}</em>
-      </div>
+      {!compact && (
+        <>
+          <StartLocationMap
+            recordedStart={recordedStart}
+            selectedStart={selectedStart}
+            recordedLabel={t('alphaGps.recordedStart')}
+            selectedLabel={t('alphaGps.correctedStart')}
+            onChange={onChange}
+          />
+          <div className="startMapLegend">
+            <span className="recorded">{t('alphaGps.recordedStart')}</span>
+            <span className="selected">{t('alphaGps.correctedStart')}</span>
+            <em>{t('alphaGps.mapHint')}</em>
+          </div>
+        </>
+      )}
     </section>
   );
 }

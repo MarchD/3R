@@ -43,7 +43,7 @@ export interface MatchEvidenceScores {
 
 export interface DistanceReference {
   distanceM: number;
-  source: 'repair_consensus' | 'recorded_session';
+  source: 'repair_consensus' | 'sensor_candidate' | 'recorded_session' | 'gps_trace';
   estimateCount?: number;
   recordProgresses?: number[];
   recordPatches?: RecordPatch[];
@@ -51,11 +51,12 @@ export interface DistanceReference {
 
 export interface GpsMatchProposal {
   candidateId: string;
-  provider: 'Valhalla / OpenStreetMap';
+  provider: 'Valhalla / OpenStreetMap' | 'Manual drawing' | 'Recorded GPS';
   originalTrace: GeoPoint[];
   recordedStart: GeoPoint;
   correctedStart: GeoPoint;
   matchedRoute: GeoPoint[];
+  routeAnchors?: GeoPoint[];
   positionPatches: PositionPatch[];
   sourcePointCount: number;
   submittedPointCount: number;
@@ -65,8 +66,14 @@ export interface GpsMatchProposal {
   distanceReference?: DistanceReference;
   distanceDeltaPercent?: number;
   distanceConflict: boolean;
+  preserveDistance?: boolean;
   traceScaleFactor: number;
-  reconstructionMethod: 'trace_match' | 'heading_dead_reckoning' | 'generated_loop';
+  reconstructionMethod:
+    | 'trace_match'
+    | 'heading_dead_reckoning'
+    | 'generated_loop'
+    | 'manual_route'
+    | 'gps_trace_distance';
   evidenceScores: MatchEvidenceScores;
   confidence: 'low' | 'medium' | 'high';
 }

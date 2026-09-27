@@ -5,7 +5,12 @@ export type DistanceRepairAlgorithm =
   | 'steps_weighted_mean_step_length'
   | 'cleaned_speed_integration';
 
-export type RepairAlgorithm = DistanceRepairAlgorithm | 'timestamp_shift' | 'gps_map_match';
+export type RepairAlgorithm =
+  | DistanceRepairAlgorithm
+  | 'timestamp_shift'
+  | 'gps_map_match'
+  | 'gps_manual_draw'
+  | 'gps_trace_distance';
 
 export interface ActivitySummary {
   totalDistanceM?: number;
@@ -24,6 +29,27 @@ export interface PositionPatch {
   recordIndex: number;
   latitude: number;
   longitude: number;
+}
+
+export interface LapPatch {
+  lapIndex: number;
+  totalDistanceM?: number;
+  startPosition?: { latitude: number; longitude: number };
+  endPosition?: { latitude: number; longitude: number };
+}
+
+export interface RebuiltLap {
+  index: number;
+  startTime: string;
+  endTime: string;
+  totalElapsedTimeS: number;
+  totalTimerTimeS: number;
+  totalDistanceM: number;
+  avgSpeedMps: number;
+  maxSpeedMps?: number;
+  lapTrigger: 'distance' | 'sessionEnd';
+  startPosition?: { latitude: number; longitude: number };
+  endPosition?: { latitude: number; longitude: number };
 }
 
 export interface RepairCalculation {
@@ -58,6 +84,8 @@ export interface RepairPatch {
   repairedSummary: ActivitySummary;
   recordPatches: RecordPatch[];
   positionPatches?: PositionPatch[];
+  lapPatches?: LapPatch[];
+  replacementLaps?: RebuiltLap[];
   timestampOffsetMs?: number;
   originalStartTime?: string;
   correctedStartTime?: string;
@@ -79,7 +107,6 @@ export interface RepairedActivity extends NormalizedActivity {
 
 export type RepairState =
   | { status: 'not-requested' }
-  | { status: 'confirming' }
   | { status: 'calculating' }
   | { status: 'ready'; candidates: RepairCandidate[]; selectedCandidateId?: string }
   | { status: 'previewing'; candidates: RepairCandidate[]; selectedCandidateId: string }
@@ -88,4 +115,5 @@ export type RepairState =
       patch: RepairPatch;
       repairedActivity: RepairedActivity;
       candidates: RepairCandidate[];
+      selectedCandidateId?: string;
     };

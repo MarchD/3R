@@ -224,17 +224,12 @@ function loopAnchors(start: GeoPoint, bearing: number, radiusM: number): GeoPoin
   ];
 }
 
-async function requestLoopRoute(
+async function requestRouteGeometry(
   activity: NormalizedActivity,
-  evidence: GpsEvidence,
-  start: GeoPoint,
-  distanceReference: DistanceReference,
-  bearing: number,
-  radiusM: number,
-  fetcher: typeof fetch,
+  anchors: GeoPoint[],
+  fetcher: typeof fetch = fetch,
   signal?: AbortSignal,
-): Promise<GpsMatchProposal> {
-  const anchors = loopAnchors(start, bearing, radiusM);
+): Promise<GeoPoint[]> {
   const response = await fetcher(ROUTE_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Client-Id': '3r-fit-repair-alpha' },
@@ -253,6 +248,20 @@ async function requestLoopRoute(
   const payload = (await response.json()) as ValhallaResponse;
   if (!response.ok) throw new Error(payload.error ?? `Routing failed (${response.status}).`);
   const route = joinedRoute(payload);
+  if (route.length < 2) throw new Error('The router did not return a usable road route.');
+  return route;
+}
+
+async function requestRouteThroughAnchors(
+  activity: NormalizedActivity,
+  evidence: GpsEvidence,
+  anchors: GeoPoint[],
+  distanceReference: DistanceReference,
+  candidateId: string,
+  fetcher: typeof fetch,
+  signal?: AbortSignal,
+): Promise<GpsMatchProposal> {
+  const route = await requestRouteGeometry(activity, anchors, fetcher, signal);
   const artificialEvidence = { ...evidence, cleanedPoints: [], scaleFactor: 1 };
   const submittedPoints = anchors.map((point, index) => ({ ...point, recordIndex: index }));
   const proposal = createGpsMatchProposal(
@@ -264,7 +273,28 @@ async function requestLoopRoute(
     distanceReference,
     'generated_loop',
   );
-  return { ...proposal, candidateId: `loop-${bearing}-${radiusM.toFixed(1)}` };
+  return { ...proposal, candidateId, routeAnchors: anchors };
+}
+
+async function requestLoopRoute(
+  activity: NormalizedActivity,
+  evidence: GpsEvidence,
+  start: GeoPoint,
+  distanceReference: DistanceReference,
+  bearing: number,
+  radiusM: number,
+  fetcher: typeof fetch,
+  signal?: AbortSignal,
+): Promise<GpsMatchProposal> {
+  return requestRouteThroughAnchors(
+    activity,
+    evidence,
+    loopAnchors(start, bearing, radiusM),
+    distanceReference,
+    `loop-${bearing}-${radiusM.toFixed(1)}`,
+    fetcher,
+    signal,
+  );
 }
 
 export async function requestLoopCandidates(

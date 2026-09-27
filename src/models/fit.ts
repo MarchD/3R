@@ -61,10 +61,15 @@ export type NormalizedRecord = z.infer<typeof normalizedRecordSchema>;
 
 export interface NormalizedLap {
   index: number;
+  lapTrigger?: string;
   startTime?: string;
+  endTime?: string;
   totalElapsedTimeS?: number;
   totalTimerTimeS?: number;
   totalDistanceM?: number;
+  avgSpeedMps?: number;
+  startPosition?: { latitude: number; longitude: number };
+  endPosition?: { latitude: number; longitude: number };
   [key: string]: unknown;
 }
 
