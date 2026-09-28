@@ -873,7 +873,7 @@ details summary {
 }
 .routeModeSwitch button.selected {
   color: var(--blue);
-  background: white;
+  background: var(--paper);
   box-shadow: 0 1px 4px rgba(24, 43, 70, 0.12);
 }
 .routeModeSwitch button:disabled {
@@ -890,9 +890,9 @@ details summary {
 }
 .manualRouteEditor {
   overflow: hidden;
-  border: 1px solid rgba(36, 87, 214, 0.2);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: white;
+  background: var(--paper);
 }
 .manualRouteHeading {
   display: flex;
@@ -938,7 +938,7 @@ details summary {
   padding: 7px 10px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: white;
+  background: var(--paper);
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -989,7 +989,7 @@ details summary {
 }
 .editableRouteMap {
   height: 410px;
-  background: #e7ecf1;
+  background: var(--wash);
 }
 .routeEditMarkerShell {
   border: 0;
@@ -1057,6 +1057,11 @@ details summary {
   font-size: 11px;
   font-weight: 800;
 }
+[data-theme='dark'] .manualRoutePointNumber,
+[data-theme='dark'] .routeEditMarker,
+[data-theme='dark'] .routeEditRemove {
+  color: var(--wash);
+}
 .manualRouteCoordinates {
   min-width: 0;
   margin-right: auto;
@@ -1107,9 +1112,13 @@ details summary {
   border: 1px solid var(--line);
   border-radius: 7px;
   color: var(--ink);
-  background: white;
+  background: var(--wash);
   font: inherit;
   font-variant-numeric: tabular-nums;
+}
+.manualRouteCoordinatesForm input::placeholder {
+  color: var(--muted);
+  opacity: 1;
 }
 .manualRouteCoordinatesForm .textButton {
   grid-column: 1 / -1;
@@ -1626,7 +1635,7 @@ details summary {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 11px;
-  background: white;
+  background: var(--paper);
 }
 .repairSettings[hidden] {
   display: none;
