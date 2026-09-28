@@ -1,8 +1,10 @@
-import { Activity, Globe2, ShieldCheck } from 'lucide-react';
+import { Activity, Globe2, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { useLanguage, type Language } from '../../i18n/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export function AppHeader() {
   const { language, setLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="appHeader">
@@ -19,6 +21,14 @@ export function AppHeader() {
         <div className="privacy">
           <ShieldCheck size={16} /> {t('app.privacy')}
         </div>
+        <button
+          type="button"
+          className="themeToggle"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
         <label className="languagePicker" htmlFor="language">
           <Globe2 size={15} aria-hidden="true" />
           <span className="srOnly">{t('language.label')}</span>

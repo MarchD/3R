@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../app/App';
 import { ToastProvider } from '../contexts/ToastContext';
+import { ThemeProvider } from '../contexts/ThemeContext';
 import { createRepairCandidates } from '../fit/repair/createRepairCandidates';
 import { parsedFixture } from './fixtures';
 import { LanguageProvider } from '../i18n/LanguageContext';
@@ -49,11 +50,13 @@ const MATCHED_SHAPE =
 
 function renderApp() {
   return render(
-    <LanguageProvider>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
-    </LanguageProvider>,
+    <ThemeProvider>
+      <LanguageProvider>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </LanguageProvider>
+    </ThemeProvider>,
   );
 }
 
@@ -106,11 +109,38 @@ describe('complete local analysis and repair flow', () => {
     repairRequests = 0;
     workerParsedResult = parsedFixture();
     vi.stubGlobal('Worker', MockWorker);
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
   });
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it('keeps the merged theme toggle working and remembers the selected theme', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('3r-theme')).toBe('dark');
+
+    await user.click(screen.getByRole('button', { name: 'Switch to light theme' }));
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(localStorage.getItem('3r-theme')).toBe('light');
   });
 
   it('calculates distance from settings, then applies and exports a derived FIT file', async () => {
