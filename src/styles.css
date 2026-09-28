@@ -80,11 +80,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.84);
-  backdrop-filter: blur(14px);
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  background: var(--paper);
 }
 [data-theme='dark'] .appHeader {
   background: rgba(20, 28, 43, 0.84);
@@ -138,7 +134,9 @@ button:disabled {
   background: var(--paper);
   color: var(--muted);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 .themeToggle:hover {
   color: var(--ink);
@@ -771,11 +769,31 @@ details summary {
   border-radius: 11px;
   background: linear-gradient(90deg, var(--amber-soft), var(--paper) 38%);
 }
+.alphaGps.standardMap {
+  border-color: var(--line);
+  border-left-color: var(--blue);
+  background: var(--paper);
+}
+.alphaGps.standardMap .alphaGpsIcon {
+  color: var(--blue);
+  background: var(--blue-soft);
+  box-shadow: inset 0 0 0 1px rgba(36, 87, 214, 0.18);
+}
+.alphaGps.standardMap .alphaEvidence {
+  border-color: var(--line);
+}
+.alphaGps.standardMap .alphaEvidence > div {
+  border-right-color: var(--line);
+}
 .alphaGpsHeading {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
+}
+.mapCloseButton {
+  align-self: start;
+  white-space: nowrap;
 }
 .alphaGpsIcon {
   width: 36px;
@@ -826,6 +844,302 @@ details summary {
 }
 .alphaEvidence span {
   color: var(--muted);
+  font-size: 11px;
+}
+.routeModeSwitch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--wash);
+}
+.routeModeSwitch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.routeModeSwitch button.selected {
+  color: var(--blue);
+  background: var(--paper);
+  box-shadow: 0 1px 4px rgba(24, 43, 70, 0.12);
+}
+.routeModeSwitch button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.mapDistanceNote {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.mapDistanceNote {
+  margin: 0;
+}
+.manualRouteEditor {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.manualRouteHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px;
+}
+.manualRouteHeading h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.manualRouteHeading p,
+.manualRouteHint,
+.manualRoutePrivacy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.manualRouteEditor .startLocationEditor.compact {
+  gap: 10px;
+  margin: 0 15px 14px;
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+.startLocationEditor.compact .startLocationHeading,
+.startLocationEditor.compact .startSearch {
+  padding: 0;
+}
+.startLocationEditor.compact .coordinateEditor {
+  padding: 0;
+}
+.manualRouteToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 15px 12px;
+}
+.manualRouteToolbar button {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.manualRouteToolbar button.selected {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.manualRouteToolbar button:disabled {
+  cursor: not-allowed;
+}
+.manualRouteDistance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  background: var(--wash);
+  color: var(--muted);
+  font-size: 12px;
+}
+.manualRouteDistance strong {
+  margin-left: 4px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.manualRouteDistance em {
+  width: 100%;
+  font-style: normal;
+  font-size: 11px;
+}
+.manualRouteTarget {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+.manualRouteTarget span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.manualRouteTarget strong {
+  color: var(--blue);
+  font-size: 18px;
+}
+.editableRouteMap {
+  height: 410px;
+  background: var(--wash);
+}
+.routeEditMarkerShell {
+  border: 0;
+  background: none;
+}
+.routeEditMarker {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 2px solid white;
+  border-radius: 50%;
+  color: white;
+  background: var(--amber);
+  box-shadow: 0 2px 7px rgba(16, 28, 44, 0.3);
+  font-size: 12px;
+  font-weight: 800;
+}
+.routeEditMarker.start {
+  background: var(--green);
+}
+.routeEditMarker.finish {
+  background: var(--red);
+}
+.routeEditRemove {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 5px;
+  color: white;
+  background: var(--red);
+  cursor: pointer;
+}
+.manualRouteControls {
+  display: grid;
+  gap: 12px;
+  padding: 14px 15px 15px;
+}
+.manualRoutePoints {
+  max-height: 184px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  list-style: none;
+}
+.manualRoutePoints li {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.manualRoutePointNumber {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: var(--amber);
+  font-size: 11px;
+  font-weight: 800;
+}
+[data-theme='dark'] .manualRoutePointNumber,
+[data-theme='dark'] .routeEditMarker,
+[data-theme='dark'] .routeEditRemove {
+  color: var(--wash);
+}
+.manualRouteCoordinates {
+  min-width: 0;
+  margin-right: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.manualRoutePoints button {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+.manualRoutePoints button:hover:not(:disabled) {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+.manualRoutePoints button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.manualRouteCoordinatesForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 8px;
+}
+.manualRouteCoordinatesForm label {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.manualRouteCoordinatesForm input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: var(--wash);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.manualRouteCoordinatesForm input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+.manualRouteCoordinatesForm .textButton {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.manualRouteActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.manualRouteActions .textButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.manualRouteActions span {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+.manualRoutePrivacy {
   font-size: 11px;
 }
 .startLocationEditor {
@@ -1071,6 +1385,28 @@ details summary {
 .alphaGpsResult {
   display: grid;
   gap: 13px;
+  scroll-margin-top: 20px;
+  outline: 0;
+}
+.routeReviewHeading {
+  padding: 2px 2px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.routeReviewHeading h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+}
+.routeReviewHeading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.routeReviewHeading .textButton {
+  flex: 0 0 auto;
 }
 .routeComparisonMap {
   margin: 0;
@@ -1131,6 +1467,30 @@ details summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+.routeAlternatives {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.routeAlternatives > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.routeAlternatives button {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: white;
+  font: inherit;
+  cursor: pointer;
+}
+.routeAlternatives button.selected {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 .alphaGpsVerdict > div {
   padding: 10px 12px;
@@ -1234,6 +1594,7 @@ details summary {
   background: repeating-linear-gradient(135deg, var(--wash) 0 4px, var(--paper) 4px 8px);
 }
 .alphaGpsWarning,
+.alphaGpsConflict,
 .gpsRepairSummary {
   padding: 10px 12px;
   display: flex;
@@ -1244,6 +1605,11 @@ details summary {
   background: var(--amber-soft);
   font-size: 12px;
   line-height: 1.45;
+}
+.alphaGpsConflict {
+  color: var(--red);
+  background: #fff0ef;
+  box-shadow: inset 0 0 0 1px rgba(194, 59, 59, 0.18);
 }
 .alphaGpsActions {
   display: flex;
@@ -1264,6 +1630,119 @@ details summary {
   color: var(--blue);
 }
 
+.repairSettings {
+  margin: 0 24px 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+}
+.repairSettings[hidden] {
+  display: none;
+}
+.repairSettings > * + * {
+  border-top: 1px solid var(--line);
+}
+.repairSettings .startTimeRepair {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.repairSettings .mapRepairEntry,
+.repairSettings .alphaGps {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+.repairSettings .mapRepairEntry {
+  border-top: 1px solid var(--line);
+}
+.distanceSettings {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+.distanceSettingsHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.distanceSettingsHeading > svg {
+  margin-top: 2px;
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+.distanceSettingsHeading h3 {
+  margin: 0 0 3px;
+  font-size: 17px;
+}
+.distanceSettingsHeading p,
+.distanceUnavailable,
+.distanceSettingsAction span {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.distanceChoices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.distanceChoices label {
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.distanceChoices label.selected {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+.distanceChoices label:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.distanceChoices label:focus-within {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.distanceChoices input {
+  margin: 3px 0 0;
+  accent-color: var(--blue);
+}
+.distanceChoices span {
+  display: grid;
+  gap: 3px;
+}
+.distanceChoices strong {
+  font-size: 12px;
+}
+.distanceChoices small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.distanceSettingsAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.distanceSettings .repairCandidates,
+.distanceSettings .repairWorking {
+  margin: 0;
+}
+.distanceSettings .repairCandidates {
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
 .startTimeRepair {
   margin: 0 24px 16px;
   padding: 18px;
@@ -1272,6 +1751,41 @@ details summary {
   border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--paper);
+}
+.mapRepairEntry {
+  margin: 0 24px 16px;
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper);
+}
+.mapSettingsHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.mapSettingsHeading > svg {
+  margin-top: 2px;
+  color: var(--blue);
+  flex: 0 0 auto;
+}
+.mapSettingsHeading h3 {
+  margin: 0 0 3px;
+  font-size: 17px;
+}
+.mapSettingsHeading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.mapRepairEntry button {
+  align-self: center;
+  white-space: nowrap;
 }
 .repairOptionsHeading {
   display: flex;
@@ -1297,11 +1811,12 @@ details summary {
 .repairOption {
   padding: 12px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
   border-radius: 8px;
   background: var(--wash);
-  cursor: pointer;
 }
 .repairOption input {
   margin-top: 3px;
@@ -1313,8 +1828,16 @@ details summary {
 .repairOption small {
   color: var(--muted);
 }
+.repairOption .timeChangedNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+}
 .startTimeEditor {
-  padding-left: 34px;
+  padding-left: 0;
   display: grid;
   justify-items: start;
   gap: 9px;
@@ -1323,7 +1846,110 @@ details summary {
   font-size: 12px;
   font-weight: 700;
 }
-.startTimeEditor input {
+.customDropdown {
+  width: min(100%, 340px);
+  display: grid;
+  gap: 6px;
+  position: relative;
+}
+.customDropdownLabel {
+  font-size: 12px;
+  font-weight: 700;
+}
+.customDropdownTrigger {
+  width: 100%;
+  min-height: 41px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  text-align: left;
+  cursor: pointer;
+}
+.customDropdownTrigger .placeholder {
+  color: var(--muted);
+}
+.customDropdownTrigger svg {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.customDropdownTrigger[aria-expanded='true'] {
+  border-color: var(--blue);
+}
+.customDropdownMenu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  box-shadow: 0 12px 28px rgba(23, 36, 58, 0.16);
+}
+.customDropdownSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.customDropdownSearch:focus-within {
+  border-radius: 5px;
+  background: var(--blue-soft);
+}
+.customDropdownSearch input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+.customDropdownList {
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 4px;
+}
+.customDropdownList button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.customDropdownList button.active:not([aria-disabled='true']),
+.customDropdownList button:hover:not([aria-disabled='true']) {
+  color: var(--blue-dark);
+  background: var(--blue-soft);
+}
+.customDropdownList button[aria-disabled='true'] {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.customDropdownList small {
+  font-size: 11px;
+}
+.customDropdownList svg {
+  color: var(--blue);
+}
+.customDropdownEmpty {
+  padding: 9px 10px;
+}
+.startTimeEditor input[type='datetime-local'] {
   min-width: min(100%, 280px);
   padding: 9px 10px;
   border: 1px solid var(--line);
@@ -1340,84 +1966,6 @@ details summary {
   font-weight: 700;
 }
 
-.repairEntry {
-  margin: 0 24px 24px;
-  padding: 17px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: var(--blue-soft);
-}
-.repairEntry > div {
-  display: grid;
-  gap: 4px;
-}
-.repairEntry span {
-  color: var(--muted);
-  font-size: 13px;
-}
-.repairEntry > svg {
-  flex: 0 0 auto;
-}
-.repairEntry .eligibilityIcon {
-  color: var(--green);
-}
-.repairBlocked {
-  border-color: var(--line);
-  background: var(--amber-soft);
-}
-.repairBlocked > svg {
-  color: var(--amber);
-}
-.repairBlocked .eligibilityBadge {
-  margin-left: auto;
-  padding: 5px 8px;
-  border-radius: 6px;
-  color: var(--amber);
-  background: var(--paper);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.dialogBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgba(19, 31, 51, 0.52);
-  backdrop-filter: blur(4px);
-}
-.dialog {
-  width: min(520px, 100%);
-  padding: 28px;
-  border-radius: 15px;
-  background: var(--paper);
-  box-shadow: 0 30px 90px rgba(13, 23, 40, 0.3);
-}
-.dialog > svg {
-  color: var(--amber);
-}
-.dialog h2 {
-  margin: 14px 0 10px;
-  font-size: 24px;
-  letter-spacing: -0.025em;
-}
-.dialog p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-}
-.dialogActions {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 9px;
-}
 .repairWorking,
 .loadingPanel,
 .errorPanel {
@@ -1918,6 +2466,27 @@ details summary {
   }
 }
 @media (max-width: 760px) {
+  .distanceChoices {
+    grid-template-columns: 1fr;
+  }
+  .distanceSettingsAction {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .mapRepairEntry {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mapRepairEntry button {
+    align-self: flex-start;
+  }
+  .alphaGpsHeading {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .mapCloseButton {
+    grid-column: 2;
+    justify-self: start;
+  }
   .appHeader {
     height: 62px;
   }
@@ -1956,6 +2525,22 @@ details summary {
   .startLocationMap {
     height: 300px;
   }
+  .editableRouteMap {
+    height: 340px;
+  }
+  .manualRouteHeading {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .manualRouteTarget {
+    text-align: left;
+  }
+  .manualRouteCoordinatesForm {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .manualRouteCoordinatesForm .button {
+    grid-column: 1 / -1;
+  }
   .startMapLegend {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -1971,6 +2556,10 @@ details summary {
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 8px 14px;
+  }
+  .routeReviewHeading {
+    flex-direction: column;
+    gap: 8px;
   }
   .routeComparisonMap figcaption strong {
     width: 100%;
@@ -2014,23 +2603,18 @@ details summary {
   .tabContent {
     padding: 16px;
   }
-  .repairEntry,
   .repairCandidates,
   .diffPanel,
   .appliedPanel,
   .alphaGps,
-  .startTimeRepair {
+  .startTimeRepair,
+  .repairSettings {
     margin-left: 16px;
     margin-right: 16px;
   }
-  .repairEntry,
   .repairHeading {
     align-items: stretch;
     flex-direction: column;
-  }
-  .repairBlocked .eligibilityBadge {
-    margin-left: 0;
-    width: max-content;
   }
   .repairHeading {
     display: flex;

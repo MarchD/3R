@@ -97,7 +97,7 @@ export function RouteComparisonMap({
     <figure className="routeComparisonMap">
       <figcaption>
         <strong>{matchedLabel}</strong>
-        <span className="shifted">{shiftedLabel}</span>
+        {shiftedLabel && <span className="shifted">{shiftedLabel}</span>}
         <span className="matched">{matchedLabel}</span>
         <span className="start">{startLabel}</span>
         <span className="end">{endLabel}</span>

@@ -4,6 +4,7 @@ import { useToast } from '../contexts/ToastContext';
 import type { GpsMatchProposal } from '../fit/gps/types';
 import { applyGpsRepair } from '../fit/repair/applyGpsRepair';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
+import { applyTimestampRepair } from '../fit/repair/applyTimestampRepair';
 import { validateRepairEligibility } from '../fit/repair/validateRepairEligibility';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { Attachment, FitParseError } from '../models/fit';
@@ -11,6 +12,7 @@ import type { RepairCandidate, RepairState } from '../models/repair';
 import { downloadBlob } from '../utils/download';
 
 export type WorkbenchTab = 'summary' | 'normalized' | 'raw' | 'records' | 'issues';
+export type DistanceMode = 'keep' | 'recalculate';
 
 const INITIAL_REPAIR_STATE: RepairState = { status: 'not-requested' };
 const INITIAL_EXPORT_STATE: FitExportUiState = { status: 'idle' };
@@ -36,6 +38,7 @@ export function useFitWorkbench() {
   const [correctedStartTimes, setCorrectedStartTimes] = useState<
     Record<string, string | undefined>
   >({});
+  const [distanceModes, setDistanceModes] = useState<Record<string, DistanceMode>>({});
   const workers = useRef(new Map<string, Worker>());
 
   const stopWorker = useCallback((key: string) => {
@@ -158,6 +161,7 @@ export function useFitWorkbench() {
       setRepairStates((current) => withoutKey(current, id));
       setFitExportStates((current) => withoutKey(current, id));
       setCorrectedStartTimes((current) => withoutKey(current, id));
+      setDistanceModes((current) => withoutKey(current, id));
     },
     [selectedId, stopWorker],
   );
@@ -184,6 +188,15 @@ export function useFitWorkbench() {
     ? (fitExportStates[selectedId] ?? INITIAL_EXPORT_STATE)
     : INITIAL_EXPORT_STATE;
   const correctedStartTime = selectedId ? correctedStartTimes[selectedId] : undefined;
+  const distanceMode = selectedId ? (distanceModes[selectedId] ?? 'keep') : 'keep';
+
+  const setDistanceMode = useCallback(
+    (mode: DistanceMode) => {
+      if (!selectedId) return;
+      setDistanceModes((current) => ({ ...current, [selectedId]: mode }));
+    },
+    [selectedId],
+  );
 
   const setCorrectedStartTime = useCallback(
     (value: string | undefined) => {
@@ -215,6 +228,7 @@ export function useFitWorkbench() {
     const worker = createFitWorker();
     workers.current.set(key, worker);
     worker.onmessage = (event) => {
+      if (workers.current.get(key) !== worker) return;
       if (event.data.type === 'repaired') {
         setRepairState({ status: 'ready', candidates: event.data.candidates });
       }
@@ -226,6 +240,12 @@ export function useFitWorkbench() {
     };
     worker.postMessage({ id: selectedId, type: 'repair', activity: result.normalized });
   }, [result, selectedId, setRepairState, showToast, stopWorker]);
+
+  const skipDistanceRepair = useCallback(() => {
+    if (!selectedId) return;
+    stopWorker(`repair-${selectedId}`);
+    setRepairState(INITIAL_REPAIR_STATE);
+  }, [selectedId, setRepairState, stopWorker]);
 
   const applyCandidate = useCallback(
     (candidate: RepairCandidate) => {
@@ -241,6 +261,7 @@ export function useFitWorkbench() {
         status: 'applied',
         ...applied,
         candidates: repairState.status === 'previewing' ? repairState.candidates : [],
+        selectedCandidateId: candidate.id,
       });
       if (selectedId) {
         setFitExportStates((current) => ({
@@ -252,6 +273,22 @@ export function useFitWorkbench() {
     [correctedStartTime, repairState, result, selectedId, setRepairState],
   );
 
+  const applyTimeOnly = useCallback(() => {
+    if (!result || !correctedStartTime) return;
+    try {
+      const applied = applyTimestampRepair(result.file.name, result.normalized, correctedStartTime);
+      setRepairState({ status: 'applied', ...applied, candidates: [] });
+      if (selectedId) {
+        setFitExportStates((current) => ({
+          ...current,
+          [selectedId]: INITIAL_EXPORT_STATE,
+        }));
+      }
+    } catch (cause) {
+      showToast(cause instanceof Error ? cause.message : 'The start time could not be applied.');
+    }
+  }, [correctedStartTime, result, selectedId, setRepairState, showToast]);
+
   const applyGpsProposal = useCallback(
     (proposal: GpsMatchProposal) => {
       if (!result) return;
@@ -259,7 +296,13 @@ export function useFitWorkbench() {
         const applied = applyGpsRepair(
           result.file.name,
           result.normalized,
-          proposal,
+          {
+            ...proposal,
+            preserveDistance:
+              proposal.reconstructionMethod === 'gps_trace_distance'
+                ? false
+                : distanceMode === 'keep',
+          },
           correctedStartTime,
         );
         setRepairState({ status: 'applied', ...applied, candidates: [] });
@@ -275,8 +318,24 @@ export function useFitWorkbench() {
         );
       }
     },
-    [correctedStartTime, result, selectedId, setRepairState, showToast],
+    [correctedStartTime, distanceMode, result, selectedId, setRepairState, showToast],
   );
+
+  const returnToRepair = useCallback(() => {
+    if (repairState.status !== 'applied') return;
+    const candidate = repairState.candidates.find(
+      (item) => item.id === repairState.selectedCandidateId,
+    );
+    if (candidate) {
+      setRepairState({
+        status: 'previewing',
+        candidates: repairState.candidates,
+        selectedCandidateId: candidate.id,
+      });
+    } else {
+      setRepairState(INITIAL_REPAIR_STATE);
+    }
+  }, [repairState, setRepairState]);
 
   const exportFit = useCallback(async () => {
     if (!selectedId || !selected || repairState.status !== 'applied') return;
@@ -337,12 +396,15 @@ export function useFitWorkbench() {
     addFiles,
     applyCandidate,
     applyGpsProposal,
+    applyTimeOnly,
     attachments,
     calculateRepairs,
     correctedStartTime,
+    distanceMode,
     exportFit,
     fitExportState,
     removeAttachment,
+    returnToRepair,
     repairState,
     result,
     retryAttachment,
@@ -351,6 +413,8 @@ export function useFitWorkbench() {
     selectAttachment,
     setActiveTab,
     setCorrectedStartTime,
+    setDistanceMode,
+    skipDistanceRepair,
     setRepairState,
   };
 }

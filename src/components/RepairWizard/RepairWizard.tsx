@@ -6,18 +6,14 @@ import {
   FileDown,
   LoaderCircle,
   MapPinned,
-  ShieldAlert,
-  Wrench,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import type { ParsedFitFile } from '../../models/fit';
 import type { RepairCandidate, RepairState } from '../../models/repair';
 import { downloadJson } from '../../utils/download';
 import { pace } from '../ActivitySummary/ActivitySummary';
 import { RepairCandidateCard } from '../RepairCandidateCard/RepairCandidateCard';
 import type { FitExportReport } from '../../fit/encoder/fitEncoder';
-import { validateRepairEligibility } from '../../fit/repair/validateRepairEligibility';
-import { sportLabel, useLanguage } from '../../i18n/LanguageContext';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export type FitExportUiState =
   | { status: 'idle' }
@@ -29,110 +25,29 @@ interface Props {
   result: ParsedFitFile;
   state: RepairState;
   onState: (state: RepairState) => void;
-  onCalculate: () => void;
   onApply: (candidate: RepairCandidate) => void;
   correctedStartTime?: string;
   fitExportState: FitExportUiState;
   onExportFit: () => void;
   onCopied: () => void;
-}
-
-function repairUnavailableReason(
-  detectedSport: string,
-  hasSession: boolean,
-  localizedSport: string,
-  t: ReturnType<typeof useLanguage>['t'],
-): string {
-  if (detectedSport !== 'running') {
-    return t('repair.runningOnly', { sport: localizedSport });
-  }
-  if (!hasSession) return t('repair.needsSession');
-  return t('repair.needsRecords');
+  onBack: () => void;
+  onKeepDistance: () => void;
 }
 
 export function RepairWizard({
   result,
   state,
   onState,
-  onCalculate,
   onApply,
   correctedStartTime,
   fitExportState,
   onExportFit,
   onCopied,
+  onBack,
+  onKeepDistance,
 }: Props) {
   const { language, t } = useLanguage();
-  const dialog = useRef<HTMLDivElement>(null);
-  const eligibility = validateRepairEligibility(result.normalized);
-  const detectedSport = sportLabel(eligibility.detectedSport, language);
-  const ineligibilityReason = repairUnavailableReason(
-    eligibility.detectedSport,
-    Boolean(result.normalized.session),
-    detectedSport,
-    t,
-  );
-  useEffect(() => {
-    if (state.status === 'confirming') dialog.current?.focus();
-  }, [state.status]);
-  if (state.status === 'not-requested') {
-    if (!eligibility.eligible)
-      return (
-        <div className="repairEntry repairBlocked">
-          <AlertTriangle aria-hidden="true" />
-          <div>
-            <strong>{t('repair.unavailable')}</strong>
-            <span>{ineligibilityReason}</span>
-          </div>
-          <span className="eligibilityBadge">{t('repair.detected', { sport: detectedSport })}</span>
-        </div>
-      );
-    return (
-      <div className="repairEntry">
-        <CheckCircle2 className="eligibilityIcon" aria-hidden="true" />
-        <div>
-          <strong>{t('repair.runningValidated')}</strong>
-          <span>{t('repair.available')}</span>
-        </div>
-        <button
-          type="button"
-          className="button primary"
-          onClick={() => onState({ status: 'confirming' })}
-        >
-          <Wrench size={16} /> {t('repair.activity')}
-        </button>
-      </div>
-    );
-  }
-  if (state.status === 'confirming') {
-    return (
-      <div className="dialogBackdrop">
-        <div
-          className="dialog"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="repair-title"
-          tabIndex={-1}
-          ref={dialog}
-        >
-          <ShieldAlert size={28} />
-          <h2 id="repair-title">{t('repair.dialogTitle')}</h2>
-          <p>{t('repair.dialogBody')}</p>
-          <div className="dialogActions">
-            <button
-              type="button"
-              className="button secondary"
-              onClick={() => onState({ status: 'not-requested' })}
-            >
-              {t('repair.cancel')}
-            </button>
-            <button type="button" className="button primary" onClick={onCalculate}>
-              {t('repair.continue')}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (state.status === 'not-requested') return null;
   if (state.status === 'calculating') {
     return (
       <div className="repairWorking" aria-live="polite">
@@ -143,6 +58,14 @@ export function RepairWizard({
   if (state.status === 'applied') {
     return (
       <section className="appliedPanel">
+        <button
+          type="button"
+          className="textButton"
+          disabled={fitExportState.status === 'exporting'}
+          onClick={onBack}
+        >
+          <ArrowLeft size={15} /> {t('repair.backToPrevious')}
+        </button>
         <div className="appliedHeading">
           <CheckCircle2 aria-hidden="true" />
           <div>
@@ -169,12 +92,23 @@ export function RepairWizard({
           <div className="gpsRepairSummary">
             <MapPinned size={17} aria-hidden="true" />
             <span>
-              {t('alphaGps.applied', {
-                records: state.patch.positionPatches.length.toLocaleString(),
-              })}
+              {t(
+                state.patch.algorithm === 'gps_manual_draw'
+                  ? 'alphaGps.manual.applied'
+                  : 'alphaGps.applied',
+                {
+                  records: state.patch.positionPatches.length.toLocaleString(),
+                },
+              )}
             </span>
           </div>
         ) : null}
+        {state.patch.algorithm === 'gps_trace_distance' && (
+          <div className="gpsRepairSummary">
+            <MapPinned size={17} aria-hidden="true" />
+            <span>{t('alphaGps.gps.applied')}</span>
+          </div>
+        )}
         <div className="derivedOutputGroup">
           <span>{t('repair.jsonEvidence')}</span>
           <div className="downloadGrid">
@@ -336,11 +270,7 @@ export function RepairWizard({
         ))}
       </div>
       <div className="repairFooter">
-        <button
-          type="button"
-          className="button secondary"
-          onClick={() => onState({ status: 'not-requested' })}
-        >
+        <button type="button" className="button secondary" onClick={onKeepDistance}>
           {t('repair.cancelRepair')}
         </button>
         <button

@@ -77,6 +77,13 @@ function semicirclesToDegrees(value: unknown): number | undefined {
   return typeof value === 'number' ? (value * 180) / 2 ** 31 : undefined;
 }
 
+function stableFieldOrder(message: MutableMesg): MutableMesg {
+  // The SDK reuses definitions by field set, so equal sets must also be written in equal order.
+  return Object.fromEntries(
+    Object.entries(message).sort(([first], [second]) => first.localeCompare(second)),
+  ) as MutableMesg;
+}
+
 function shiftMessageTimestamps(
   messageNumber: number,
   message: MutableMesg,
@@ -168,6 +175,7 @@ export function encodeRepairedFit(
   const positionPatches = new Map(
     (patch.positionPatches ?? []).map((item) => [item.recordIndex, item]),
   );
+  const lapPatches = new Map((patch.lapPatches ?? []).map((item) => [item.lapIndex, item]));
   const hasDistanceRepair = patches.size > 0;
   const patchedRecords: { timestamp?: number; distanceM: number; speedMps: number }[] = [];
   let recordIndex = 0;
@@ -204,47 +212,116 @@ export function encodeRepairedFit(
     (maximum, record) => Math.max(maximum, record.speedMps),
     0,
   );
-  if (hasDistanceRepair) {
-    let sessionIndex = 0;
-    for (const item of allMessages) {
-      if (item.messageNumber === Profile.MesgNum.SESSION) {
-        if (sessionIndex === 0 && patch.repairedSummary.totalDistanceM != null) {
-          patchSummarySpeed(
-            item.message,
-            patch.repairedSummary.totalDistanceM,
-            item.message.totalTimerTime,
-            maxSpeedMps,
-          );
-        }
-        sessionIndex += 1;
-      }
-      if (item.messageNumber === Profile.MesgNum.LAP) {
-        const start = dateMs(item.message.startTime);
-        const end = dateMs(item.message.timestamp);
-        if (start == null || end == null) continue;
-        const beforeStart = [...patchedRecords]
-          .reverse()
-          .find((record) => record.timestamp != null && record.timestamp <= start);
-        const lapRecords = patchedRecords.filter(
-          (record) =>
-            record.timestamp != null && record.timestamp > start && record.timestamp <= end,
+  let sessionIndex = 0;
+  let lapIndex = 0;
+  for (const item of allMessages) {
+    if (hasDistanceRepair && item.messageNumber === Profile.MesgNum.SESSION) {
+      if (sessionIndex === 0 && patch.repairedSummary.totalDistanceM != null) {
+        patchSummarySpeed(
+          item.message,
+          patch.repairedSummary.totalDistanceM,
+          item.message.totalTimerTime,
+          maxSpeedMps,
         );
-        const last = lapRecords.at(-1);
-        if (!last) continue;
-        const startDistance = beforeStart?.distanceM ?? lapRecords[0].distanceM;
-        const lapDistance = Math.max(0, last.distanceM - startDistance);
-        const lapMaxSpeed = lapRecords.reduce(
-          (maximum, record) => Math.max(maximum, record.speedMps),
-          0,
-        );
-        patchSummarySpeed(item.message, lapDistance, item.message.totalTimerTime, lapMaxSpeed);
       }
+      sessionIndex += 1;
     }
+    if (item.messageNumber === Profile.MesgNum.LAP) {
+      const lapPatch = lapPatches.get(lapIndex);
+      lapIndex += 1;
+      if (lapPatch?.startPosition && lapPatch.endPosition) {
+        item.message.startPositionLat = degreesToSemicircles(lapPatch.startPosition.latitude);
+        item.message.startPositionLong = degreesToSemicircles(lapPatch.startPosition.longitude);
+        item.message.endPositionLat = degreesToSemicircles(lapPatch.endPosition.latitude);
+        item.message.endPositionLong = degreesToSemicircles(lapPatch.endPosition.longitude);
+      }
+      if (!hasDistanceRepair) continue;
+      const start = dateMs(item.message.startTime);
+      const end = dateMs(item.message.timestamp);
+      if ((start == null || end == null) && lapPatch?.totalDistanceM == null) continue;
+      const beforeStart = [...patchedRecords]
+        .reverse()
+        .find((record) => start != null && record.timestamp != null && record.timestamp <= start);
+      const lapRecords = patchedRecords.filter(
+        (record) =>
+          start != null &&
+          end != null &&
+          record.timestamp != null &&
+          record.timestamp > start &&
+          record.timestamp <= end,
+      );
+      const last = lapRecords.at(-1);
+      if (!last && lapPatch?.totalDistanceM == null) continue;
+      const startDistance = beforeStart?.distanceM ?? lapRecords[0]?.distanceM ?? 0;
+      const lapDistance = lapPatch?.totalDistanceM ?? Math.max(0, last!.distanceM - startDistance);
+      const lapMaxSpeed = lapRecords.reduce(
+        (maximum, record) => Math.max(maximum, record.speedMps),
+        0,
+      );
+      patchSummarySpeed(item.message, lapDistance, item.message.totalTimerTime, lapMaxSpeed);
+    }
+  }
+
+  let outputMessages = allMessages;
+  if (patch.replacementLaps?.length) {
+    const sessions = allMessages.filter((item) => item.messageNumber === Profile.MesgNum.SESSION);
+    const originalLaps = allMessages.filter((item) => item.messageNumber === Profile.MesgNum.LAP);
+    if (sessions.length !== 1 || !originalLaps.length) {
+      throw new Error('Automatic lap rebuilding requires one session with existing laps.');
+    }
+    const finalLap = patch.replacementLaps.at(-1)!;
+    const finalTimeMs = Date.parse(finalLap.endTime) + timestampOffsetMs;
+    sessions[0].message.firstLapIndex = 0;
+    sessions[0].message.numLaps = patch.replacementLaps.length;
+    sessions[0].message.timestamp = new Date(finalTimeMs);
+    allMessages
+      .filter((item) => item.messageNumber === Profile.MesgNum.ACTIVITY)
+      .forEach((item) => {
+        const activityMessage = item.message;
+        if ((dateMs(activityMessage.timestamp) ?? 0) < finalTimeMs) {
+          activityMessage.timestamp = new Date(finalTimeMs);
+        }
+      });
+    const replacementMessages = patch.replacementLaps.map((lap) => {
+      const message: MutableMesg = {
+        messageIndex: lap.index,
+        timestamp: new Date(Date.parse(lap.endTime) + timestampOffsetMs),
+        startTime: new Date(Date.parse(lap.startTime) + timestampOffsetMs),
+        totalElapsedTime: lap.totalElapsedTimeS,
+        totalTimerTime: lap.totalTimerTimeS,
+        totalDistance: lap.totalDistanceM,
+        avgSpeed: lap.avgSpeedMps,
+        enhancedAvgSpeed: lap.avgSpeedMps,
+        maxSpeed: lap.maxSpeedMps,
+        enhancedMaxSpeed: lap.maxSpeedMps,
+        event: 'lap',
+        eventType: 'stop',
+        lapTrigger: lap.lapTrigger,
+        sport: sessions[0].message.sport,
+        subSport: sessions[0].message.subSport,
+      } as MutableMesg;
+      if (lap.startPosition && lap.endPosition) {
+        message.startPositionLat = degreesToSemicircles(lap.startPosition.latitude);
+        message.startPositionLong = degreesToSemicircles(lap.startPosition.longitude);
+        message.endPositionLat = degreesToSemicircles(lap.endPosition.latitude);
+        message.endPositionLong = degreesToSemicircles(lap.endPosition.longitude);
+      }
+      return { messageNumber: Profile.MesgNum.LAP, message };
+    });
+    let inserted = false;
+    outputMessages = allMessages.flatMap((item) => {
+      if (item.messageNumber !== Profile.MesgNum.LAP) return [item];
+      if (inserted) return [];
+      inserted = true;
+      return replacementMessages;
+    });
   }
 
   definitions.forEach((definition) => addUnknownProfileFields(definition, unknownMessageNumbers));
   const encoder = new Encoder({ fieldDescriptions });
-  allMessages.forEach(({ messageNumber, message }) => encoder.onMesg(messageNumber, message));
+  outputMessages.forEach(({ messageNumber, message }) =>
+    encoder.onMesg(messageNumber, stableFieldOrder(message)),
+  );
   const bytes = encoder.close();
 
   const validationDecoder = new Decoder(
@@ -275,8 +352,68 @@ export function encodeRepairedFit(
       Math.abs(latitude - positionPatch.latitude) > 0.00001 ||
       Math.abs(longitude - positionPatch.longitude) > 0.00001
     ) {
-      throw new Error('The encoded FIT file did not preserve every reconstructed position.');
+      throw new Error(
+        `The encoded FIT file did not preserve reconstructed position at record ${positionPatch.recordIndex}.`,
+      );
     }
+  }
+  for (const lapPatch of lapPatches.values()) {
+    const lap = validation.messages.lapMesgs?.[lapPatch.lapIndex];
+    if (!lap) throw new Error(`The encoded FIT file is missing lap ${lapPatch.lapIndex}.`);
+    const fields =
+      lapPatch.startPosition && lapPatch.endPosition
+        ? [
+            [lap.startPositionLat, lapPatch.startPosition.latitude],
+            [lap.startPositionLong, lapPatch.startPosition.longitude],
+            [lap.endPositionLat, lapPatch.endPosition.latitude],
+            [lap.endPositionLong, lapPatch.endPosition.longitude],
+          ]
+        : [];
+    if (
+      fields.some(
+        ([encoded, expected]) =>
+          typeof expected !== 'number' ||
+          Math.abs((semicirclesToDegrees(encoded) ?? Number.NaN) - expected) > 0.00001 ||
+          semicirclesToDegrees(encoded) == null,
+      ) ||
+      (lapPatch.totalDistanceM != null &&
+        (typeof lap.totalDistance !== 'number' ||
+          Math.abs(lap.totalDistance - lapPatch.totalDistanceM) > 0.1))
+    ) {
+      throw new Error(`The encoded FIT file did not preserve calibrated lap ${lapPatch.lapIndex}.`);
+    }
+  }
+  if (patch.replacementLaps?.length) {
+    const encodedLaps = validation.messages.lapMesgs ?? [];
+    const encodedSession = validation.messages.sessionMesgs?.[0];
+    const lapDistanceM = encodedLaps.reduce((sum, lap) => sum + (lap.totalDistance ?? 0), 0);
+    const lapElapsedS = encodedLaps.reduce((sum, lap) => sum + (lap.totalElapsedTime ?? 0), 0);
+    const lapTimerS = encodedLaps.reduce((sum, lap) => sum + (lap.totalTimerTime ?? 0), 0);
+    if (
+      encodedLaps.length !== patch.replacementLaps.length ||
+      encodedSession?.numLaps !== encodedLaps.length ||
+      expectedDistance == null ||
+      Math.abs(lapDistanceM - expectedDistance) > 0.2 ||
+      encodedSession.totalElapsedTime == null ||
+      encodedSession.totalTimerTime == null ||
+      Math.abs(lapElapsedS - encodedSession.totalElapsedTime) > 1 ||
+      Math.abs(lapTimerS - encodedSession.totalTimerTime) > 1
+    ) {
+      throw new Error('The encoded FIT file has inconsistent automatic laps.');
+    }
+    patch.replacementLaps.forEach((lap, index) => {
+      const encoded = encodedLaps[index];
+      const expectedStartMs = Date.parse(lap.startTime) + timestampOffsetMs;
+      const expectedEndMs = Date.parse(lap.endTime) + timestampOffsetMs;
+      if (
+        encoded.messageIndex !== index ||
+        Math.abs((dateMs(encoded.startTime) ?? Number.NaN) - expectedStartMs) > 1000 ||
+        Math.abs((dateMs(encoded.timestamp) ?? Number.NaN) - expectedEndMs) > 1000 ||
+        Math.abs((encoded.totalDistance ?? Number.NaN) - lap.totalDistanceM) > 0.1
+      ) {
+        throw new Error(`The encoded FIT file did not preserve rebuilt lap ${index}.`);
+      }
+    });
   }
   if (
     hasDistanceRepair &&
@@ -297,7 +434,7 @@ export function encodeRepairedFit(
   return {
     bytes,
     report: {
-      messageCount: allMessages.length,
+      messageCount: outputMessages.length,
       recordCount: recordIndex,
       developerFieldCount: Object.keys(fieldDescriptions).length,
       unknownMessageTypes: unknownMessageNumbers.size,

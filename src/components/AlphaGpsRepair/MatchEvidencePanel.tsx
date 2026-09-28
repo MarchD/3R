@@ -3,6 +3,7 @@ import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   scores: MatchEvidenceScores;
+  manual?: boolean;
 }
 
 type MetricName = 'distance' | 'heading' | 'proximity' | 'altitude';
@@ -13,7 +14,7 @@ function metricValue(name: MetricName, metric: MatchEvidenceMetric): string {
   return `${metric.value.toFixed(1)}%`;
 }
 
-export function MatchEvidencePanel({ scores }: Props) {
+export function MatchEvidencePanel({ scores, manual = false }: Props) {
   const { t } = useLanguage();
   const metrics: { name: MetricName; metric?: MatchEvidenceMetric }[] = [
     { name: 'distance', metric: scores.distance },
@@ -26,7 +27,7 @@ export function MatchEvidencePanel({ scores }: Props) {
       <div className="matchEvidenceHeading">
         <div>
           <h3 id="match-evidence-title">{t('alphaGps.evidenceTitle')}</h3>
-          <p>{t('alphaGps.evidenceBody')}</p>
+          <p>{t(manual ? 'alphaGps.manual.evidenceBody' : 'alphaGps.evidenceBody')}</p>
         </div>
         <strong>{scores.overall}/100</strong>
       </div>

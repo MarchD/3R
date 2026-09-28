@@ -74,13 +74,36 @@ export function normalizeFit(
     };
   });
   const laps: NormalizedLap[] = ((messages.lapMesgs ?? []) as Record<string, unknown>[]).map(
-    (lap, index) => ({
-      index,
-      startTime: text(lap.startTime),
-      totalElapsedTimeS: number(lap.totalElapsedTime),
-      totalTimerTimeS: number(lap.totalTimerTime),
-      totalDistanceM: number(lap.totalDistance),
-    }),
+    (lap, index) => {
+      const startLatitude = number(lap.startPositionLat);
+      const startLongitude = number(lap.startPositionLong);
+      const endLatitude = number(lap.endPositionLat);
+      const endLongitude = number(lap.endPositionLong);
+      return {
+        index,
+        lapTrigger: text(lap.lapTrigger),
+        startTime: text(lap.startTime),
+        endTime: text(lap.timestamp),
+        totalElapsedTimeS: number(lap.totalElapsedTime),
+        totalTimerTimeS: number(lap.totalTimerTime),
+        totalDistanceM: number(lap.totalDistance),
+        avgSpeedMps: number(lap.enhancedAvgSpeed ?? lap.avgSpeed),
+        startPosition:
+          startLatitude != null && startLongitude != null
+            ? {
+                latitude: semicirclesToDegrees(startLatitude),
+                longitude: semicirclesToDegrees(startLongitude),
+              }
+            : undefined,
+        endPosition:
+          endLatitude != null && endLongitude != null
+            ? {
+                latitude: semicirclesToDegrees(endLatitude),
+                longitude: semicirclesToDegrees(endLongitude),
+              }
+            : undefined,
+      };
+    },
   );
   return {
     metadata: {

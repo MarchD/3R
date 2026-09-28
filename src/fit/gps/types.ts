@@ -1,4 +1,4 @@
-import type { PositionPatch } from '../../models/repair';
+import type { PositionPatch, RecordPatch } from '../../models/repair';
 
 export interface GeoPoint {
   latitude: number;
@@ -19,6 +19,8 @@ export interface GpsEvidence {
   headingRecords: number;
   altitudeRecords: number;
   accuracyRecords: number;
+  traceDistanceM: number;
+  scaleFactor: number;
 }
 
 export interface PositionLike extends GeoPoint {
@@ -39,19 +41,39 @@ export interface MatchEvidenceScores {
   altitude?: MatchEvidenceMetric;
 }
 
+export interface DistanceReference {
+  distanceM: number;
+  source: 'repair_consensus' | 'sensor_candidate' | 'recorded_session' | 'gps_trace';
+  estimateCount?: number;
+  recordProgresses?: number[];
+  recordPatches?: RecordPatch[];
+}
+
 export interface GpsMatchProposal {
-  provider: 'Valhalla / OpenStreetMap';
+  candidateId: string;
+  provider: 'Valhalla / OpenStreetMap' | 'Manual drawing' | 'Recorded GPS';
   originalTrace: GeoPoint[];
   recordedStart: GeoPoint;
   correctedStart: GeoPoint;
   matchedRoute: GeoPoint[];
+  routeAnchors?: GeoPoint[];
   positionPatches: PositionPatch[];
   sourcePointCount: number;
   submittedPointCount: number;
   rejectedPointCount: number;
   routeDistanceM: number;
   recordedDistanceM?: number;
+  distanceReference?: DistanceReference;
   distanceDeltaPercent?: number;
+  distanceConflict: boolean;
+  preserveDistance?: boolean;
+  traceScaleFactor: number;
+  reconstructionMethod:
+    | 'trace_match'
+    | 'heading_dead_reckoning'
+    | 'generated_loop'
+    | 'manual_route'
+    | 'gps_trace_distance';
   evidenceScores: MatchEvidenceScores;
   confidence: 'low' | 'medium' | 'high';
 }

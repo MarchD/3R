@@ -19,6 +19,8 @@ function sourceFit(): Uint8Array {
       distance: second * 3,
       enhancedSpeed: 3,
       heartRate: 140 + second,
+      positionLat: Math.round(((50.45 + second * 0.0001) * 2 ** 31) / 180),
+      positionLong: Math.round(((30.52 + second * 0.0001) * 2 ** 31) / 180),
     }),
   );
   encoder.onMesg(Profile.MesgNum.LAP, {
@@ -50,6 +52,53 @@ function sourceFit(): Uint8Array {
 }
 
 describe('FIT export', () => {
+  it('replaces automatic lap messages and updates the session lap count', () => {
+    const source = sourceFit();
+    const patch: RepairPatch = {
+      sourceFileName: 'source.fit',
+      createdAt: '2024-01-03T00:00:00.000Z',
+      algorithm: 'gps_trace_distance',
+      originalSummary: { totalDistanceM: 100, elapsedTimeS: 2 },
+      repairedSummary: { totalDistanceM: 8, elapsedTimeS: 2 },
+      recordPatches: [0, 1, 2].map((recordIndex) => ({
+        recordIndex,
+        distanceM: recordIndex * 4,
+        derivedSpeedMps: 4,
+      })),
+      replacementLaps: [0, 1].map((index) => ({
+        index,
+        startTime: `2024-01-01T00:00:0${index}.000Z`,
+        endTime: `2024-01-01T00:00:0${index + 1}.000Z`,
+        totalElapsedTimeS: 1,
+        totalTimerTimeS: 1,
+        totalDistanceM: 4,
+        avgSpeedMps: 4,
+        maxSpeedMps: 4,
+        lapTrigger: index === 0 ? 'distance' : 'sessionEnd',
+      })),
+      timestampOffsetMs: 86_400_000,
+      correctedStartTime: '2024-01-02T00:00:00.000Z',
+      assumptions: [],
+      warnings: [],
+    };
+    const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+    const exported = encodeRepairedFit(buffer, patch);
+    const decoded = new Decoder(
+      Stream.fromArrayBuffer(
+        exported.bytes.buffer.slice(
+          exported.bytes.byteOffset,
+          exported.bytes.byteOffset + exported.bytes.byteLength,
+        ),
+      ),
+    ).read();
+
+    expect(decoded.messages.lapMesgs).toHaveLength(2);
+    expect(decoded.messages.sessionMesgs?.[0]?.numLaps).toBe(2);
+    expect(decoded.messages.lapMesgs?.map((lap) => lap.totalDistance)).toEqual([4, 4]);
+    expect(decoded.messages.lapMesgs?.[0]?.startTime).toEqual(new Date('2024-01-02T00:00:00.000Z'));
+    expect(decoded.messages.lapMesgs?.[1]?.timestamp).toEqual(new Date('2024-01-02T00:00:02.000Z'));
+  });
+
   it('encodes, CRC-validates, and decodes a repaired FIT derivative', () => {
     const source = sourceFit();
     const patch: RepairPatch = {
@@ -62,6 +111,14 @@ describe('FIT export', () => {
         { recordIndex: 0, distanceM: 0, derivedSpeedMps: 4 },
         { recordIndex: 1, distanceM: 4, derivedSpeedMps: 4 },
         { recordIndex: 2, distanceM: 8, derivedSpeedMps: 4 },
+      ],
+      lapPatches: [
+        {
+          lapIndex: 0,
+          totalDistanceM: 8,
+          startPosition: { latitude: 50.45, longitude: 30.52 },
+          endPosition: { latitude: 50.46, longitude: 30.53 },
+        },
       ],
       assumptions: [],
       warnings: [],
@@ -83,6 +140,10 @@ describe('FIT export', () => {
     expect(decoded.messages.recordMesgs?.at(-1)?.distance).toBeCloseTo(8, 2);
     expect(decoded.messages.recordMesgs?.at(-1)?.enhancedSpeed).toBeCloseTo(4, 2);
     expect(decoded.messages.sessionMesgs?.[0]?.totalDistance).toBeCloseTo(8, 2);
+    const lap = decoded.messages.lapMesgs?.[0];
+    expect(lap?.totalDistance).toBeCloseTo(8, 2);
+    expect(((lap?.startPositionLat ?? 0) * 180) / 2 ** 31).toBeCloseTo(50.45, 4);
+    expect(((lap?.endPositionLong ?? 0) * 180) / 2 ** 31).toBeCloseTo(30.53, 4);
     expect(exported.report.recordCount).toBe(3);
   });
 
@@ -162,5 +223,42 @@ describe('FIT export', () => {
     expect((longitude * 180) / 2 ** 31).toBeCloseTo(30.52, 4);
     expect(firstRecord?.heartRate).toBe(140);
     expect(exported.report.positionPatchedRecords).toBe(3);
+  });
+
+  it('updates lap distance from GPS while preserving the original record coordinates', () => {
+    const source = sourceFit();
+    const patch: RepairPatch = {
+      sourceFileName: 'source.fit',
+      createdAt: '2024-01-03T00:00:00.000Z',
+      algorithm: 'gps_trace_distance',
+      originalSummary: { totalDistanceM: 100, elapsedTimeS: 2 },
+      repairedSummary: { totalDistanceM: 10, elapsedTimeS: 2 },
+      recordPatches: [0, 1, 2].map((recordIndex) => ({
+        recordIndex,
+        distanceM: recordIndex * 5,
+        derivedSpeedMps: 5,
+      })),
+      lapPatches: [{ lapIndex: 0, totalDistanceM: 10 }],
+      assumptions: [],
+      warnings: [],
+    };
+    const buffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+    const exported = encodeRepairedFit(buffer, patch);
+    const decoded = new Decoder(
+      Stream.fromArrayBuffer(
+        exported.bytes.buffer.slice(
+          exported.bytes.byteOffset,
+          exported.bytes.byteOffset + exported.bytes.byteLength,
+        ),
+      ),
+    ).read();
+
+    expect(decoded.messages.lapMesgs?.[0]?.totalDistance).toBeCloseTo(10, 2);
+    expect(decoded.messages.sessionMesgs?.[0]?.totalDistance).toBeCloseTo(10, 2);
+    expect(decoded.messages.recordMesgs?.[1]?.distance).toBeCloseTo(5, 2);
+    expect(decoded.messages.recordMesgs?.[1]?.positionLat).toBe(
+      Math.round(((50.45 + 0.0001) * 2 ** 31) / 180),
+    );
+    expect(exported.report.positionPatchedRecords).toBe(0);
   });
 });
