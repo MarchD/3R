@@ -96,8 +96,13 @@ button:disabled {
   display: grid;
   place-items: center;
   border-radius: 10px 10px 4px 10px;
-  color: #fff;
-  background: var(--blue);
+  background: var(--blue-soft);
+}
+.brand > span img {
+  display: block;
+}
+[data-theme='dark'] .brand > span img {
+  filter: brightness(1.4);
 }
 .brand div {
   display: grid;
@@ -1742,6 +1747,25 @@ details summary {
   border-top: 1px solid var(--line);
   border-radius: 0;
   background: transparent;
+}
+.distanceDataNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--amber);
+  border-radius: 8px;
+  background: var(--amber-soft);
+}
+.distanceDataNotice svg {
+  flex: 0 0 auto;
+  color: var(--amber);
+}
+.distanceDataNotice p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .startTimeRepair {
   margin: 0 24px 16px;

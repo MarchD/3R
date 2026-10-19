@@ -105,9 +105,9 @@ const en: Record<string, string> = {
   'severity.warning': 'warning',
   'severity.critical': 'critical',
   'alphaGps.badge': 'Alpha experiment',
-  'alphaGps.mapEntryTitle': 'Map changes',
+  'alphaGps.mapEntryTitle': 'Map (optional)',
   'alphaGps.mapEntryBody':
-    'Redraw an incorrect route or recalculate distance from a correct GPS track.',
+    'Recorded GPS positions stay unchanged unless you choose Update map and apply a new route. You can repair distance separately.',
   'alphaGps.updateMap': 'Update map',
   'alphaGps.closeMap': 'Close map editor',
   'alphaGps.mapTitle': 'Update activity map',
@@ -272,6 +272,8 @@ const en: Record<string, string> = {
     'Keep distance and speed for time or redrawn-map changes. The recorded-GPS action recalculates them separately.',
   'repair.recalculateDistance': 'Recalculate distance',
   'repair.recalculateDistanceBody': 'Compare sensor-based estimates and choose one to apply.',
+  'repair.distanceDataUnavailable':
+    'No reliable sensor-based distance estimate is available for this file. The recorded distance is kept; updating the map is still optional.',
   'repair.timeOnlyBody': 'Only the corrected start time will change.',
   'repair.startTimeSection': 'Start date and time',
   'repair.startTimeChanged': 'Start time changed',
@@ -449,9 +451,9 @@ const uk: Record<string, string> = {
   'severity.warning': 'попередження',
   'severity.critical': 'критично',
   'alphaGps.badge': 'Альфа-експеримент',
-  'alphaGps.mapEntryTitle': 'Зміни карти',
+  'alphaGps.mapEntryTitle': 'Карта (необов’язково)',
   'alphaGps.mapEntryBody':
-    'Перемалюйте неправильний маршрут або перерахуйте дистанцію за правильним GPS-треком.',
+    'GPS-точки залишаться без змін, якщо не вибрати «Оновити карту» й не застосувати новий маршрут. Дистанцію можна виправити окремо.',
   'alphaGps.updateMap': 'Оновити карту',
   'alphaGps.closeMap': 'Закрити редактор карти',
   'alphaGps.mapTitle': 'Оновити карту активності',
@@ -617,6 +619,8 @@ const uk: Record<string, string> = {
     'Зберегти дистанцію та швидкість для змін часу чи перемальованої карти. Окрема GPS-дія перераховує їх.',
   'repair.recalculateDistance': 'Перерахувати дистанцію',
   'repair.recalculateDistanceBody': 'Порівняти оцінки за датчиками й вибрати одну.',
+  'repair.distanceDataUnavailable':
+    'Для цього файлу немає надійної оцінки дистанції за датчиками. Записана дистанція збережена; оновлювати карту не обов’язково.',
   'repair.timeOnlyBody': 'Зміниться лише виправлений час початку.',
   'repair.startTimeSection': 'Дата й час початку',
   'repair.startTimeChanged': 'Час початку змінено',

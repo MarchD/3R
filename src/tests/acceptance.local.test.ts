@@ -13,6 +13,7 @@ import { estimateDistanceConsensus } from '../fit/repair/distanceConsensus';
 import { applyRepairPatch } from '../fit/repair/applyRepairPatch';
 import { applyGpsRepair } from '../fit/repair/applyGpsRepair';
 import { createGpsTraceDistanceProposal } from '../fit/gps/gpsTraceDistance';
+import { createManualRouteProposal } from '../fit/gps/manualRoute';
 import { createRepairCandidates } from '../fit/repair/createRepairCandidates';
 
 const fixturePath = process.env.FIT_FIXTURE;
@@ -143,3 +144,41 @@ describe.runIf(Boolean(gpsLapFixturePath))('recorded GPS lap rebuilding fixture'
     expect(decoded.messages.sessionMesgs?.[0]?.timestamp).toEqual(laps.at(-1)?.timestamp);
   });
 });
+
+const interleavedGpsFixturePath = process.env.INTERLEAVED_GPS_FIXTURE;
+
+describe.runIf(Boolean(interleavedGpsFixturePath))(
+  'interleaved GPS and distance records fixture',
+  () => {
+    it('keeps recorded distance available for a map-only repair when sensors are insufficient', () => {
+      const bytes = readFileSync(interleavedGpsFixturePath!);
+      const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      const parsed = parseFitBuffer(buffer, {
+        name: 'interleaved.fit',
+        size: bytes.byteLength,
+        lastModified: 0,
+      });
+      const evidence = analyzeGpsEvidence(parsed.normalized);
+      expect(parsed.integrity.complete).toBe(true);
+      expect(parsed.normalized.records).toHaveLength(2258);
+      expect(parsed.normalized.session?.totalDistanceM).toBeCloseTo(8591.13, 2);
+      expect(() => createRepairCandidates(parsed.normalized)).toThrow();
+      expect(() => createGpsTraceDistanceProposal(parsed.normalized, evidence)).toThrow();
+
+      const start = evidence.sourcePoints[0];
+      const proposal = createManualRouteProposal(parsed.normalized, evidence, start, [
+        { latitude: start.latitude + 0.0003, longitude: start.longitude + 0.0003 },
+      ]);
+      const { patch, repairedActivity } = applyGpsRepair('interleaved.fit', parsed.normalized, {
+        ...proposal,
+        preserveDistance: true,
+      });
+      expect(patch.recordPatches).toEqual([]);
+      expect(patch.positionPatches).toHaveLength(parsed.normalized.records.length);
+      expect(repairedActivity.session?.totalDistanceM).toBe(
+        parsed.normalized.session?.totalDistanceM,
+      );
+      expect(encodeRepairedFit(buffer, patch).bytes.byteLength).toBeGreaterThan(0);
+    });
+  },
+);

@@ -108,7 +108,11 @@ describe('repair patching', () => {
     expect(original).toEqual(snapshot);
     expect(repairedActivity).not.toBe(original);
     expect(patch.recordPatches).toHaveLength(original.records.length);
+    expect(patch.positionPatches).toBeUndefined();
     expect(repairedActivity.session?.totalDistanceM).toBe(candidate.distanceM);
+    expect(repairedActivity.records.map((record) => record.position)).toEqual(
+      original.records.map((record) => record.position),
+    );
   });
 
   it('shifts the complete normalized timeline from one corrected start time', () => {
