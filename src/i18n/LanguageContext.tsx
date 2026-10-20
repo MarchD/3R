@@ -740,7 +740,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = language;
-    document.title = language === 'uk' ? '3R — відновлення FIT' : '3R — FIT repair workbench';
+    document.title =
+      language === 'uk'
+        ? '3R — перегляд і відновлення файлів Garmin FIT'
+        : '3R — Inspect and repair Garmin FIT running files';
   }, [language]);
 
   useEffect(() => {

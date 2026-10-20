@@ -2,21 +2,23 @@ import { Globe2, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { useLanguage, type Language } from '../../i18n/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
+const homeUrl = import.meta.env.BASE_URL;
+
 export function AppHeader() {
   const { language, setLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
 
   return (
     <header className="appHeader">
-      <div className="brand">
+      <a className="brand" href={homeUrl} aria-label="3R home">
         <span aria-hidden="true">
-          <img src="./favicon.svg" alt="" width="24" height="24" />
+          <img src={`${homeUrl}favicon.svg`} alt="" width="24" height="24" />
         </span>
         <div>
           <strong>3R</strong>
           <small>{t('app.subtitle')}</small>
         </div>
-      </div>
+      </a>
       <div className="headerActions">
         <div className="privacy">
           <ShieldCheck size={16} /> {t('app.privacy')}

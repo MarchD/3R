@@ -137,7 +137,7 @@ describe('complete local analysis and repair flow', () => {
     const user = userEvent.setup();
     renderApp();
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(document.querySelector('.brand img')).toHaveAttribute('src', './favicon.svg');
+    expect(document.querySelector('.brand img')).toHaveAttribute('src', '/favicon.svg');
 
     await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }));
     expect(document.documentElement.dataset.theme).toBe('dark');

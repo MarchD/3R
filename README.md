@@ -26,9 +26,9 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually `http://localhost:5173`.
+Open the local URL printed by Vite, usually `http://localhost:5173`. The workbench is at `/`.
 
-Add `?version=alpha` to enable the experimental GPS repair workflow.
+Add `?version=alpha` to `/` to enable the experimental GPS repair workflow.
 
 ## Deployment
 
@@ -39,7 +39,14 @@ Connect this repository to a Netlify project. The checked-in `netlify.toml` conf
 - Build command: `npm run build`
 - Publish directory: `dist`
 - Node.js: `20.19.0`
-- SPA fallback: every application route is rewritten to `/index.html`
+- Search-readable workbench shell at `/`, with React mounted in the attachment area
+- Redirect from the short-lived `/app/` path back to `/`
+
+The initial page content is present in HTML before JavaScript runs and uses the same stylesheet as
+the interactive workbench. FIT processing still runs in the browser; its production bundle is
+minified and source maps are not deployed. Browser-delivered code cannot be kept secret. Set a
+canonical site URL and submit a sitemap once the final domain is chosen; do not publish the same
+canonical for both Netlify and GitHub Pages.
 
 No Netlify Vite plugin or additional environment variables are required. Netlify builds the app at
 the domain root, so generated asset URLs work on both Netlify subdomains and custom domains.

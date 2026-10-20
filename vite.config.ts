@@ -4,6 +4,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [react()],
+  build: {
+    sourcemap: false,
+  },
   test: {
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',

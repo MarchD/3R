@@ -6,6 +6,6 @@
   NODE_VERSION = "20.19.0"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  from = "/app/*"
+  to = "/"
+  status = 301
