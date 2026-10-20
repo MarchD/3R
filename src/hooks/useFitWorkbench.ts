@@ -39,6 +39,7 @@ export function useFitWorkbench() {
     Record<string, string | undefined>
   >({});
   const [distanceModes, setDistanceModes] = useState<Record<string, DistanceMode>>({});
+  const [distanceRepairFailures, setDistanceRepairFailures] = useState<Record<string, boolean>>({});
   const workers = useRef(new Map<string, Worker>());
 
   const stopWorker = useCallback((key: string) => {
@@ -162,6 +163,7 @@ export function useFitWorkbench() {
       setFitExportStates((current) => withoutKey(current, id));
       setCorrectedStartTimes((current) => withoutKey(current, id));
       setDistanceModes((current) => withoutKey(current, id));
+      setDistanceRepairFailures((current) => withoutKey(current, id));
     },
     [selectedId, stopWorker],
   );
@@ -189,6 +191,9 @@ export function useFitWorkbench() {
     : INITIAL_EXPORT_STATE;
   const correctedStartTime = selectedId ? correctedStartTimes[selectedId] : undefined;
   const distanceMode = selectedId ? (distanceModes[selectedId] ?? 'keep') : 'keep';
+  const distanceRepairUnavailable = selectedId
+    ? (distanceRepairFailures[selectedId] ?? false)
+    : false;
 
   const setDistanceMode = useCallback(
     (mode: DistanceMode) => {
@@ -224,6 +229,7 @@ export function useFitWorkbench() {
     }
 
     setRepairState({ status: 'calculating' });
+    setDistanceRepairFailures((current) => ({ ...current, [selectedId]: false }));
     const key = `repair-${selectedId}`;
     const worker = createFitWorker();
     workers.current.set(key, worker);
@@ -233,9 +239,17 @@ export function useFitWorkbench() {
         setRepairState({ status: 'ready', candidates: event.data.candidates });
       }
       if (event.data.type === 'error') {
-        showToast(event.data.error.message);
         setRepairState(INITIAL_REPAIR_STATE);
+        setDistanceModes((current) => ({ ...current, [selectedId]: 'keep' }));
+        setDistanceRepairFailures((current) => ({ ...current, [selectedId]: true }));
       }
+      stopWorker(key);
+    };
+    worker.onerror = () => {
+      if (workers.current.get(key) !== worker) return;
+      setRepairState(INITIAL_REPAIR_STATE);
+      setDistanceModes((current) => ({ ...current, [selectedId]: 'keep' }));
+      setDistanceRepairFailures((current) => ({ ...current, [selectedId]: true }));
       stopWorker(key);
     };
     worker.postMessage({ id: selectedId, type: 'repair', activity: result.normalized });
@@ -401,6 +415,7 @@ export function useFitWorkbench() {
     calculateRepairs,
     correctedStartTime,
     distanceMode,
+    distanceRepairUnavailable,
     exportFit,
     fitExportState,
     removeAttachment,

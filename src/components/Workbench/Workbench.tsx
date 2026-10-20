@@ -1,4 +1,13 @@
-import { FileJson2, Gauge, ListTree, MapPinned, Ruler, ShieldCheck, Table2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  FileJson2,
+  Gauge,
+  ListTree,
+  MapPinned,
+  Ruler,
+  ShieldCheck,
+  Table2,
+} from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import type {
@@ -31,6 +40,7 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
     calculateRepairs,
     correctedStartTime,
     distanceMode,
+    distanceRepairUnavailable,
     exportFit,
     fitExportState,
     removeAttachment,
@@ -241,6 +251,12 @@ export function Workbench({ workbench }: { workbench: FitWorkbenchController }) 
                 </div>
                 {distanceUnavailableReason && (
                   <p className="distanceUnavailable">{distanceUnavailableReason}</p>
+                )}
+                {distanceRepairUnavailable && (
+                  <div className="distanceDataNotice" role="status">
+                    <AlertTriangle size={17} aria-hidden="true" />
+                    <p>{t('repair.distanceDataUnavailable')}</p>
+                  </div>
                 )}
                 {distanceMode === 'recalculate' &&
                   (repairState.status === 'calculating' || repairState.status === 'ready') &&

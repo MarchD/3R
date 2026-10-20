@@ -1,4 +1,4 @@
-import { Activity, Globe2, Moon, ShieldCheck, Sun } from 'lucide-react';
+import { Globe2, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { useLanguage, type Language } from '../../i18n/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -9,8 +9,8 @@ export function AppHeader() {
   return (
     <header className="appHeader">
       <div className="brand">
-        <span>
-          <Activity size={21} />
+        <span aria-hidden="true">
+          <img src="./favicon.svg" alt="" width="24" height="24" />
         </span>
         <div>
           <strong>3R</strong>

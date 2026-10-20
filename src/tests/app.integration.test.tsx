@@ -44,6 +44,7 @@ vi.mock('../components/AlphaGpsRepair/EditableRouteMap', () => ({
 }));
 
 let repairRequests = 0;
+let repairFailure: string | undefined;
 let workerParsedResult = parsedFixture();
 const MATCHED_SHAPE =
   'cfff_Bu~~ey@`AvAx@iBvByEx@cBkEsGiNsSmEuGaFmHaHgKoAiBeCyD_AwAYMWR]t@}V{_@qDuFyBgDeEqGf@gAn@uAlAkC';
@@ -72,10 +73,12 @@ class MockWorker {
       if (message.type === 'repair') {
         repairRequests += 1;
         this.onmessage?.({
-          data: {
-            type: 'repaired',
-            candidates: createRepairCandidates(parsedFixture().normalized),
-          },
+          data: repairFailure
+            ? { type: 'error', error: { code: 'processing_failed', message: repairFailure } }
+            : {
+                type: 'repaired',
+                candidates: createRepairCandidates(parsedFixture().normalized),
+              },
         } as MessageEvent);
       }
       if (message.type === 'export-fit') {
@@ -107,6 +110,7 @@ describe('complete local analysis and repair flow', () => {
     window.history.replaceState({}, '', '/');
     localStorage.clear();
     repairRequests = 0;
+    repairFailure = undefined;
     workerParsedResult = parsedFixture();
     vi.stubGlobal('Worker', MockWorker);
     vi.stubGlobal(
@@ -133,6 +137,7 @@ describe('complete local analysis and repair flow', () => {
     const user = userEvent.setup();
     renderApp();
     expect(document.documentElement.dataset.theme).toBe('light');
+    expect(document.querySelector('.brand img')).toHaveAttribute('src', './favicon.svg');
 
     await user.click(screen.getByRole('button', { name: 'Switch to dark theme' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
@@ -153,7 +158,8 @@ describe('complete local analysis and repair flow', () => {
     await user.upload(screen.getByLabelText('Choose FIT files'), file);
     expect(await screen.findByText('Complete decode')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Update activity map' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Map changes' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Map (optional)' })).toBeInTheDocument();
+    expect(screen.getByText(/Recorded GPS positions stay unchanged/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Update map' })).toBeInTheDocument();
     expect(
       screen.queryByRole('img', { name: 'Editable running route map' }),
@@ -165,6 +171,9 @@ describe('complete local analysis and repair flow', () => {
 
     await user.click(screen.getByRole('radio', { name: /Recalculate distance/ }));
     await waitFor(() => expect(repairRequests).toBe(1));
+    expect(
+      screen.queryByRole('img', { name: 'Editable running route map' }),
+    ).not.toBeInTheDocument();
     const choices = (await screen.findAllByRole('radio')).slice(-3);
     expect(choices).toHaveLength(3);
     expect(choices.every((choice) => !(choice as HTMLInputElement).checked)).toBe(true);
@@ -183,6 +192,33 @@ describe('complete local analysis and repair flow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create repaired FIT' }));
     expect(await screen.findByText(/Validated and downloaded/)).toBeInTheDocument();
     expect(URL.createObjectURL).toHaveBeenCalled();
+  });
+
+  it('keeps map editing available when sensor distance repair has insufficient data', async () => {
+    repairFailure = 'Not enough valid cadence and step-length data for median repair.';
+    const user = userEvent.setup();
+    renderApp();
+    await user.upload(
+      screen.getByLabelText('Choose FIT files'),
+      new File([new Uint8Array([1])], 'sparse-sensors.fit'),
+    );
+
+    await user.click(await screen.findByRole('radio', { name: /Recalculate distance/ }));
+    expect(
+      await screen.findByText(/No reliable sensor-based distance estimate is available/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Preview selected repair' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.toast')).toBeNull();
+    expect(screen.getByRole('radio', { name: /Keep recorded distance/ })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Update map' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'Update map' }));
+    await user.click(screen.getByRole('button', { name: 'Add on map' }));
+    await user.click(screen.getByRole('button', { name: 'Review drawn route' }));
+    expect(screen.getByRole('button', { name: 'Apply drawn path' })).toBeEnabled();
+    expect(screen.getByText(/Original record, lap, and session distances/)).toBeInTheDocument();
   });
 
   it('blocks repair when the FIT activity is not running', async () => {
